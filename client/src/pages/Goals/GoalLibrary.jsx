@@ -23,6 +23,32 @@ const domainColors = {
   motor_skills:       'bg-orange-100 text-orange-700 border-orange-200',
 };
 
+// Official VB-MAPP domain abbreviations (used on scoring sheets)
+const vbmappAbbrevs = {
+  'Mand':                 'M',
+  'Tact':                 'T',
+  'Listener Responding':  'LR',
+  'VP/MTS':               'VP',
+  'Independent Play':     'IP',
+  'Social Behavior':      'Soc',
+  'Motor Imitation':      'MI',
+  'Echoic':               'Ec',
+  'LRFFC':                'LRFFC',
+  'Intraverbal':          'IV',
+  'Classroom Routines':   'Cls',
+  'Linguistic Structure': 'Lin',
+  'Reading':              'Rdg',
+  'Writing':              'Wri',
+  'Math':                 'Ma',
+  'Spelling':             'Sp',
+};
+
+// Returns the standard VB-MAPP label e.g. "Mand 1-M"
+const vbmappLabel = (domain, milestoneNumber) => {
+  const abbrev = vbmappAbbrevs[domain] || domain;
+  return `${domain} ${milestoneNumber}-${abbrev}`;
+};
+
 export default function GoalLibrary() {
   const [goals, setGoals] = useState([]);
   const [domains, setDomains] = useState([]);
@@ -73,10 +99,11 @@ export default function GoalLibrary() {
       .catch(() => toast.error('Failed to load VB-MAPP milestones'));
   }, [selectedVbmappDomain]);
 
-  // Pre-populate goal text when a milestone is selected
+  // Pre-populate goal text when a milestone is selected (uses VB-MAPP label e.g. "Mand 1-M")
   useEffect(() => {
     if (selectedMilestone) {
-      setGoalText(`[${selectedMilestone.milestone_code}] ${selectedMilestone.milestone_name}`);
+      const label = vbmappLabel(selectedMilestone.domain, selectedMilestone.milestone_number);
+      setGoalText(`[${label}] ${selectedMilestone.milestone_name}`);
     }
   }, [selectedMilestone]);
 
@@ -244,10 +271,18 @@ export default function GoalLibrary() {
             </select>
           </div>
 
-          <div className="flex-1 max-w-sm">
-            <label className="block text-xs font-medium text-gray-700 mb-1">2. Select Milestone</label>
+          <div className="flex-1 max-w-2xl">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              2. Select Milestone
+              {selectedVbmappDomain && (
+                <span className="ml-2 text-gray-400 font-normal">
+                  — {vbmappMilestones.length} milestones
+                </span>
+              )}
+            </label>
             <select
               className="input w-full"
+              size={selectedVbmappDomain ? Math.min(vbmappMilestones.length + 1, 8) : 1}
               value={selectedMilestone?.id ?? ''}
               onChange={e => {
                 const found = vbmappMilestones.find(m => String(m.id) === e.target.value);
@@ -255,14 +290,16 @@ export default function GoalLibrary() {
               }}
               disabled={!selectedVbmappDomain || vbmappMilestones.length === 0}
             >
-              <option value="">Choose a milestone…</option>
+              <option value="">— choose a milestone —</option>
               {[1, 2, 3].map(lvl => {
                 const group = vbmappMilestones.filter(m => m.level === lvl);
                 return group.length > 0 ? (
-                  <optgroup key={lvl} label={`Level ${lvl}`}>
+                  <optgroup key={lvl} label={`── Level ${lvl} ──`}>
                     {group.map(m => (
                       <option key={m.id} value={m.id}>
-                        {m.milestone_code}: {m.milestone_name}
+                        {vbmappLabel(m.domain, m.milestone_number)}
+                        {'  —  '}
+                        {m.milestone_name}
                       </option>
                     ))}
                   </optgroup>
@@ -277,18 +314,19 @@ export default function GoalLibrary() {
           <div className="card max-w-2xl space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
+                {/* VB-MAPP label as the primary identifier e.g. "Mand 1-M" */}
                 <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base font-bold text-indigo-700">
+                    {vbmappLabel(selectedMilestone.domain, selectedMilestone.milestone_number)}
+                  </span>
                   <span className="badge border bg-indigo-100 text-indigo-700 border-indigo-200">
                     {selectedMilestone.domain}
                   </span>
                   <span className="badge border bg-gray-100 text-gray-600 border-gray-200">
                     Level {selectedMilestone.level}
                   </span>
-                  <span className="text-xs font-mono text-gray-400">
-                    {selectedMilestone.milestone_code}
-                  </span>
                 </div>
-                <p className="font-semibold text-gray-900 mt-2 text-sm leading-snug">
+                <p className="font-medium text-gray-800 mt-2 text-sm leading-snug">
                   {selectedMilestone.milestone_name}
                 </p>
               </div>
