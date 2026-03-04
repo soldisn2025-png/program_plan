@@ -41,6 +41,33 @@ router.get('/domains', auth, async (req, res) => {
   }
 });
 
+// GET /api/goals/vbmapp-domains — return all distinct VB-MAPP domains
+router.get('/vbmapp-domains', auth, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT DISTINCT domain FROM vbmapp_milestones ORDER BY domain`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/goals/vbmapp-milestones/:domain — return milestones for a VB-MAPP domain
+router.get('/vbmapp-milestones/:domain', auth, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT * FROM vbmapp_milestones WHERE domain = $1 ORDER BY level, milestone_number`,
+      [req.params.domain]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/goals/:id — single goal with full template data
 router.get('/:id', auth, async (req, res) => {
   try {

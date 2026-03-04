@@ -30,6 +30,14 @@ export default function GoalLibrary() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // VB-MAPP state
+  const [vbmappDomains, setVbmappDomains] = useState([]);
+  const [selectedVbmappDomain, setSelectedVbmappDomain] = useState('');
+  const [vbmappMilestones, setVbmappMilestones] = useState([]);
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
+  const [goalText, setGoalText] = useState('');
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +52,33 @@ export default function GoalLibrary() {
       .catch(() => toast.error('Failed to load goals'))
       .finally(() => setLoading(false));
   }, []);
+
+  // Fetch VB-MAPP domains on mount
+  useEffect(() => {
+    api.get('/goals/vbmapp-domains')
+      .then(res => setVbmappDomains(res.data))
+      .catch(() => toast.error('Failed to load VB-MAPP domains'));
+  }, []);
+
+  // Fetch milestones when VB-MAPP domain selection changes
+  useEffect(() => {
+    if (!selectedVbmappDomain) {
+      setVbmappMilestones([]);
+      setSelectedMilestone(null);
+      setGoalText('');
+      return;
+    }
+    api.get(`/goals/vbmapp-milestones/${encodeURIComponent(selectedVbmappDomain)}`)
+      .then(res => setVbmappMilestones(res.data))
+      .catch(() => toast.error('Failed to load VB-MAPP milestones'));
+  }, [selectedVbmappDomain]);
+
+  // Pre-populate goal text when a milestone is selected
+  useEffect(() => {
+    if (selectedMilestone) {
+      setGoalText(`[${selectedMilestone.milestone_code}] ${selectedMilestone.milestone_name}`);
+    }
+  }, [selectedMilestone]);
 
   const filtered = goals.filter(g => {
     const matchDomain = !selectedDomain || g.domain === selectedDomain;
@@ -176,6 +211,122 @@ export default function GoalLibrary() {
             <div className="text-4xl mb-3">🎯</div>
             <p className="font-medium text-gray-600">Select a goal to preview</p>
             <p className="text-sm mt-1">Full program plan template will appear here</p>
+          </div>
+        )}
+      </div>
+
+      {/* ── VB-MAPP Milestone Browser ─────────────────────────────── */}
+      <div className="border-t pt-6 space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">VB-MAPP Milestones</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Browse 240 milestones across 16 skill domains — 3 levels, 5 milestones per level
+          </p>
+        </div>
+
+        {/* Two-level dropdowns */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 max-w-xs">
+            <label className="block text-xs font-medium text-gray-700 mb-1">1. Select Domain</label>
+            <select
+              className="input w-full"
+              value={selectedVbmappDomain}
+              onChange={e => {
+                setSelectedVbmappDomain(e.target.value);
+                setSelectedMilestone(null);
+                setGoalText('');
+              }}
+            >
+              <option value="">Choose a domain…</option>
+              {vbmappDomains.map(d => (
+                <option key={d.domain} value={d.domain}>{d.domain}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1 max-w-sm">
+            <label className="block text-xs font-medium text-gray-700 mb-1">2. Select Milestone</label>
+            <select
+              className="input w-full"
+              value={selectedMilestone?.id ?? ''}
+              onChange={e => {
+                const found = vbmappMilestones.find(m => String(m.id) === e.target.value);
+                setSelectedMilestone(found || null);
+              }}
+              disabled={!selectedVbmappDomain || vbmappMilestones.length === 0}
+            >
+              <option value="">Choose a milestone…</option>
+              {[1, 2, 3].map(lvl => {
+                const group = vbmappMilestones.filter(m => m.level === lvl);
+                return group.length > 0 ? (
+                  <optgroup key={lvl} label={`Level ${lvl}`}>
+                    {group.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.milestone_code}: {m.milestone_name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null;
+              })}
+            </select>
+          </div>
+        </div>
+
+        {/* Preview card */}
+        {selectedMilestone && (
+          <div className="card max-w-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="badge border bg-indigo-100 text-indigo-700 border-indigo-200">
+                    {selectedMilestone.domain}
+                  </span>
+                  <span className="badge border bg-gray-100 text-gray-600 border-gray-200">
+                    Level {selectedMilestone.level}
+                  </span>
+                  <span className="text-xs font-mono text-gray-400">
+                    {selectedMilestone.milestone_code}
+                  </span>
+                </div>
+                <p className="font-semibold text-gray-900 mt-2 text-sm leading-snug">
+                  {selectedMilestone.milestone_name}
+                </p>
+              </div>
+              <button
+                onClick={() => { setSelectedMilestone(null); setGoalText(''); }}
+                className="text-gray-400 hover:text-gray-600 text-xl flex-shrink-0"
+                aria-label="Close preview"
+              >
+                ×
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Goal Text <span className="text-gray-400 font-normal">(editable before adding)</span>
+              </label>
+              <textarea
+                className="input w-full text-sm"
+                rows={3}
+                value={goalText}
+                onChange={e => setGoalText(e.target.value)}
+                placeholder="Customize the goal text before adding to a plan…"
+              />
+            </div>
+
+            <button
+              className="btn-primary w-full"
+              disabled={!goalText.trim()}
+              onClick={() =>
+                navigate(
+                  `/plans/new?vbmapp_id=${selectedMilestone.id}` +
+                  `&vbmapp_code=${encodeURIComponent(selectedMilestone.milestone_code)}` +
+                  `&vbmapp_goal=${encodeURIComponent(goalText)}`
+                )
+              }
+            >
+              Add to Client Goals →
+            </button>
           </div>
         )}
       </div>
