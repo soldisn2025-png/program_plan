@@ -54,6 +54,22 @@ router.get('/vbmapp-domains', auth, async (req, res) => {
   }
 });
 
+// GET /api/goals/vbmapp-suggestions — 5 foundational Level-1 starter milestones
+router.get('/vbmapp-suggestions', auth, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT * FROM vbmapp_milestones
+       WHERE milestone_number = 1
+         AND domain IN ('Mand','Tact','Listener Responding','Motor Imitation','Independent Play')
+       ORDER BY domain`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/goals/vbmapp-milestones/:domain — return milestones for a VB-MAPP domain
 router.get('/vbmapp-milestones/:domain', auth, async (req, res) => {
   try {

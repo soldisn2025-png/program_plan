@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
 import toast from 'react-hot-toast';
+import VbmappGoalSelector from '../../components/VbmappGoalSelector';
 
 const domainLabels = {
   verbal_behavior:    'Verbal Behavior',
@@ -19,57 +20,51 @@ export default function PlanBuilder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefilledChildId = searchParams.get('child_id') || '';
-  const prefilledGoalId = searchParams.get('goal_id') || '';
 
-  const [step, setStep] = useState(0);
-  const [children, setChildren] = useState([]);
-  const [goals, setGoals] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [selectedDomain, setSelectedDomain] = useState('');
-  const [goalSearch, setGoalSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [step, setStep]           = useState(0);
+  const [children, setChildren]   = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Goals staged for this plan: [{ name, domain }]
+  const [stagedGoals, setStagedGoals] = useState([]);
+
   const [form, setForm] = useState({
-    child_id: prefilledChildId,
-    name: '',
+    child_id:    prefilledChildId,
+    name:        '',
     description: '',
-    goal_ids: prefilledGoalId ? [prefilledGoalId] : [],
   });
 
   useEffect(() => {
-    Promise.all([api.get('/children'), api.get('/goals'), api.get('/goals/domains')])
-      .then(([cRes, gRes, dRes]) => {
-        setChildren(cRes.data);
-        setGoals(gRes.data);
-        setDomains(dRes.data);
-      })
-      .catch(() => toast.error('Failed to load data'))
+    api.get('/children')
+      .then(r => setChildren(r.data))
+      .catch(() => toast.error('Failed to load children'))
       .finally(() => setLoading(false));
   }, []);
 
-  const toggleGoal = (id) => {
-    setForm(f => ({
-      ...f,
-      goal_ids: f.goal_ids.includes(id)
-        ? f.goal_ids.filter(g => g !== id)
-        : [...f.goal_ids, id],
-    }));
+  // Called by VbmappGoalSelector when user adds a goal
+  const handleStageGoal = (goalName, domain) => {
+    setStagedGoals(prev => [...prev, { name: goalName, domain }]);
+    toast.success('Goal added to plan');
   };
 
-  const filteredGoals = goals.filter(g => {
-    const matchDomain = !selectedDomain || g.domain === selectedDomain;
-    const matchSearch = !goalSearch || g.name.toLowerCase().includes(goalSearch.toLowerCase());
-    return matchDomain && matchSearch;
-  });
-
-  const selectedGoals = goals.filter(g => form.goal_ids.includes(g.id));
-  const selectedChild = children.find(c => c.id === form.child_id);
+  const handleRemoveStaged = (index) => {
+    setStagedGoals(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleCreate = async () => {
     setSubmitting(true);
     try {
-      const res = await api.post('/plans', form);
+      // 1. Create each staged goal as a plan-specific (non-library) goal
+      const createdIds = await Promise.all(
+        stagedGoals.map(g =>
+          api.post('/goals', { name: g.name, domain: g.domain })
+             .then(r => r.data.id)
+        )
+      );
+
+      // 2. Create the training plan with those goal IDs
+      const res = await api.post('/plans', { ...form, goal_ids: createdIds });
       toast.success('Training plan created!');
       navigate(`/plans/${res.data.id}`);
     } catch (err) {
@@ -78,6 +73,8 @@ export default function PlanBuilder() {
       setSubmitting(false);
     }
   };
+
+  const selectedChild = children.find(c => c.id === form.child_id);
 
   if (loading) return (
     <div className="flex justify-center py-20">
@@ -96,23 +93,29 @@ export default function PlanBuilder() {
       <div className="flex items-center gap-2">
         {STEPS.map((s, i) => (
           <React.Fragment key={s}>
-            <div className={`flex items-center gap-2 text-sm ${i === step ? 'text-brand-700 font-semibold' : i < step ? 'text-gray-500' : 'text-gray-300'}`}>
+            <div className={`flex items-center gap-2 text-sm ${
+              i === step ? 'text-brand-700 font-semibold' :
+              i < step   ? 'text-gray-500' : 'text-gray-300'
+            }`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
-                i < step ? 'bg-brand-600 border-brand-600 text-white' :
+                i < step  ? 'bg-brand-600 border-brand-600 text-white' :
                 i === step ? 'border-brand-600 text-brand-600' :
-                'border-gray-300 text-gray-300'
+                             'border-gray-300 text-gray-300'
               }`}>
                 {i < step ? '✓' : i + 1}
               </div>
               <span className="hidden sm:inline">{s}</span>
             </div>
-            {i < STEPS.length - 1 && <div className={`flex-1 h-0.5 ${i < step ? 'bg-brand-600' : 'bg-gray-200'}`} />}
+            {i < STEPS.length - 1 && (
+              <div className={`flex-1 h-0.5 ${i < step ? 'bg-brand-600' : 'bg-gray-200'}`} />
+            )}
           </React.Fragment>
         ))}
       </div>
 
       <div className="card">
-        {/* Step 0: Plan Details */}
+
+        {/* ── Step 0: Plan Details ─────────────────────────────── */}
         {step === 0 && (
           <div className="space-y-5">
             <h3 className="font-semibold text-gray-900">Plan Details</h3>
@@ -155,56 +158,60 @@ export default function PlanBuilder() {
           </div>
         )}
 
-        {/* Step 1: Select Goals */}
+        {/* ── Step 1: Select Goals ─────────────────────────────── */}
         {step === 1 && (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Select Goals</h3>
-              <span className="badge bg-brand-100 text-brand-700">{form.goal_ids.length} selected</span>
+              <span className="badge bg-brand-100 text-brand-700">
+                {stagedGoals.length} added
+              </span>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input className="input flex-1" placeholder="Search goals…"
-                value={goalSearch} onChange={e => setGoalSearch(e.target.value)} />
-              <select className="input sm:w-48" value={selectedDomain}
-                onChange={e => setSelectedDomain(e.target.value)}>
-                <option value="">All Domains</option>
-                {domains.map(d => (
-                  <option key={d.domain} value={d.domain}>{domainLabels[d.domain] || d.domain}</option>
-                ))}
-              </select>
-            </div>
+            {/* VB-MAPP selector — suggestions + two-level dropdown */}
+            <VbmappGoalSelector onAdd={handleStageGoal} />
 
-            <div className="max-h-96 overflow-y-auto space-y-2 border rounded-lg p-3">
-              {filteredGoals.map(goal => (
-                <label key={goal.id}
-                  className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                    form.goal_ids.includes(goal.id)
-                      ? 'bg-brand-50 border border-brand-300'
-                      : 'hover:bg-gray-50 border border-transparent'
-                  }`}
-                >
-                  <input type="checkbox" className="mt-0.5"
-                    checked={form.goal_ids.includes(goal.id)}
-                    onChange={() => toggleGoal(goal.id)} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{goal.name}</p>
-                    <p className="text-xs text-gray-500">{domainLabels[goal.domain]}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
+            {/* Goals staged so far */}
+            {stagedGoals.length > 0 && (
+              <div className="border-t pt-4 space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Goals Added to This Plan ({stagedGoals.length})
+                </p>
+                <div className="space-y-2">
+                  {stagedGoals.map((g, i) => (
+                    <div key={i}
+                      className="flex items-start gap-3 p-3 bg-green-50 border border-green-100 rounded-lg"
+                    >
+                      <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-900 leading-snug">{g.name}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{domainLabels[g.domain] || g.domain}</p>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveStaged(i)}
+                        className="text-red-400 hover:text-red-600 text-lg flex-shrink-0 leading-none"
+                        title="Remove"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <div className="flex justify-between">
+            <div className="flex justify-between pt-2">
               <button className="btn-secondary" onClick={() => setStep(0)}>← Back</button>
               <button className="btn-primary" onClick={() => setStep(2)}>
-                Review ({form.goal_ids.length} goals) →
+                Review ({stagedGoals.length} goals) →
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 2: Review */}
+        {/* ── Step 2: Review & Create ──────────────────────────── */}
         {step === 2 && (
           <div className="space-y-5">
             <h3 className="font-semibold text-gray-900">Review & Create</h3>
@@ -212,7 +219,9 @@ export default function PlanBuilder() {
             <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Child</span>
-                <span className="font-medium">{selectedChild ? `${selectedChild.first_name} ${selectedChild.last_name}` : '—'}</span>
+                <span className="font-medium">
+                  {selectedChild ? `${selectedChild.first_name} ${selectedChild.last_name}` : '—'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Plan Name</span>
@@ -228,19 +237,21 @@ export default function PlanBuilder() {
 
             <div>
               <p className="text-sm font-medium text-gray-700 mb-3">
-                Selected Goals ({form.goal_ids.length})
+                Goals ({stagedGoals.length})
               </p>
-              {form.goal_ids.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">No goals selected — you can add them after creating the plan.</p>
+              {stagedGoals.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">
+                  No goals selected — you can add them after creating the plan.
+                </p>
               ) : (
                 <div className="space-y-2">
-                  {selectedGoals.map((g, i) => (
-                    <div key={g.id} className="flex items-center gap-3 text-sm">
+                  {stagedGoals.map((g, i) => (
+                    <div key={i} className="flex items-center gap-3 text-sm">
                       <span className="w-6 h-6 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                         {i + 1}
                       </span>
-                      <span className="text-gray-800">{g.name}</span>
-                      <span className="text-gray-400 text-xs ml-auto">{domainLabels[g.domain]}</span>
+                      <span className="text-gray-800 flex-1">{g.name}</span>
+                      <span className="text-gray-400 text-xs">{domainLabels[g.domain] || g.domain}</span>
                     </div>
                   ))}
                 </div>
