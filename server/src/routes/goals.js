@@ -103,7 +103,7 @@ router.post('/', auth, async (req, res) => {
   }
 
   const {
-    name, domain, description,
+    name, domain, description, vbmapp_domain,
     data_collection, prerequisite_skills, materials,
     sd, correct_responses, incorrect_responses,
     prompting_hierarchy, prompting_hierarchy_detail,
@@ -112,6 +112,40 @@ router.post('/', auth, async (req, res) => {
   } = req.body;
 
   try {
+    // If a VB-MAPP domain is provided, look up its program plan template
+    let templateFields = {
+      data_collection, prerequisite_skills, materials,
+      sd, correct_responses, incorrect_responses,
+      prompting_hierarchy: prompting_hierarchy || 'most_to_least',
+      prompting_hierarchy_detail, error_correction, transfer_procedure,
+      reinforcement_schedule, generalization_plan, maintenance_plan,
+    };
+
+    if (vbmapp_domain) {
+      const tmpl = await db.query(
+        'SELECT * FROM vbmapp_program_templates WHERE vbmapp_domain = $1',
+        [vbmapp_domain]
+      );
+      if (tmpl.rows.length > 0) {
+        const t = tmpl.rows[0];
+        templateFields = {
+          data_collection:          t.data_collection,
+          prerequisite_skills:      t.prerequisite_skills,
+          materials:                t.materials,
+          sd:                       t.sd,
+          correct_responses:        t.correct_responses,
+          incorrect_responses:      t.incorrect_responses,
+          prompting_hierarchy:      t.prompting_hierarchy || 'most_to_least',
+          prompting_hierarchy_detail: t.prompting_hierarchy_detail,
+          error_correction:         t.error_correction,
+          transfer_procedure:       t.transfer_procedure,
+          reinforcement_schedule:   t.reinforcement_schedule,
+          generalization_plan:      t.generalization_plan,
+          maintenance_plan:         t.maintenance_plan,
+        };
+      }
+    }
+
     const result = await db.query(
       `INSERT INTO goals (
         name, domain, description,
@@ -123,10 +157,13 @@ router.post('/', auth, async (req, res) => {
         is_library_goal, created_by
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, FALSE, $17)
       RETURNING *`,
-      [name, domain, description, data_collection, prerequisite_skills, materials,
-       sd, correct_responses, incorrect_responses, prompting_hierarchy || 'most_to_least',
-       prompting_hierarchy_detail, error_correction, transfer_procedure,
-       reinforcement_schedule, generalization_plan, maintenance_plan, req.user.id]
+      [name, domain, description,
+       templateFields.data_collection, templateFields.prerequisite_skills, templateFields.materials,
+       templateFields.sd, templateFields.correct_responses, templateFields.incorrect_responses,
+       templateFields.prompting_hierarchy, templateFields.prompting_hierarchy_detail,
+       templateFields.error_correction, templateFields.transfer_procedure,
+       templateFields.reinforcement_schedule, templateFields.generalization_plan,
+       templateFields.maintenance_plan, req.user.id]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

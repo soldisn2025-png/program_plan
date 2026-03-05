@@ -88,7 +88,8 @@ export default function VbmappGoalSelector({ onAdd }) {
   const commitAdd = (text, vbmappDomain) => {
     if (!text.trim()) return;
     const domain = vbmappDomainMap[vbmappDomain] || 'verbal_behavior';
-    onAdd(text.trim(), domain);
+    // Pass vbmappDomain as 3rd arg so parents can send it to the API for template lookup
+    onAdd(text.trim(), domain, vbmappDomain);
   };
 
   const handleBrowseAdd = () => {

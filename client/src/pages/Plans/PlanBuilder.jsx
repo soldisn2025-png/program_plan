@@ -43,8 +43,8 @@ export default function PlanBuilder() {
   }, []);
 
   // Called by VbmappGoalSelector when user adds a goal
-  const handleStageGoal = (goalName, domain) => {
-    setStagedGoals(prev => [...prev, { name: goalName, domain }]);
+  const handleStageGoal = (goalName, domain, vbmappDomain) => {
+    setStagedGoals(prev => [...prev, { name: goalName, domain, vbmappDomain }]);
     toast.success('Goal added to plan');
   };
 
@@ -56,9 +56,10 @@ export default function PlanBuilder() {
     setSubmitting(true);
     try {
       // 1. Create each staged goal as a plan-specific (non-library) goal
+      // vbmapp_domain triggers automatic population of all 12 template fields
       const createdIds = await Promise.all(
         stagedGoals.map(g =>
-          api.post('/goals', { name: g.name, domain: g.domain })
+          api.post('/goals', { name: g.name, domain: g.domain, vbmapp_domain: g.vbmappDomain })
              .then(r => r.data.id)
         )
       );
