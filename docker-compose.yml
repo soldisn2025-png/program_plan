@@ -24,7 +24,10 @@ services:
       DATABASE_URL: postgres://aba_user:aba_password@db:5432/aba_app
       JWT_SECRET: change_this_in_production_please
       PORT: 5000
+      # Allow requests from localhost AND the host machine's LAN IP (wife's laptop)
+      # Vite proxies all /api calls, so CORS origin is the Vite server itself (port 5173)
       CLIENT_URL: http://localhost:5173
+      CLIENT_URL_LAN: http://192.168.1.198:5173
     depends_on:
       - db
 
@@ -33,7 +36,9 @@ services:
     ports:
       - '5173:5173'
     environment:
-      VITE_API_URL: http://localhost:5000/api
+      # No VITE_API_URL — client falls back to /api which Vite proxies to the server container.
+      # This means ANY device on the network using port 5173 gets API access automatically.
+      VITE_PROXY_TARGET: http://server:5000
     depends_on:
       - server
 
