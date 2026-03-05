@@ -19,6 +19,7 @@ import PlanDetail from './pages/Plans/PlanDetail';
 import ProgramPlan from './pages/Plans/ProgramPlan';
 
 import DataCollection from './pages/DataCollection/index';
+import VbmappImport from './pages/Import/VbmappImport';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -60,6 +61,8 @@ export default function App() {
             <Route path="plans/:planId/goals/:planGoalId/program" element={<ProgramPlan />} />
 
             <Route path="data-collection/:planId" element={<DataCollection />} />
+
+            <Route path="import" element={<VbmappImport />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
