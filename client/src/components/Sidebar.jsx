@@ -3,10 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
-  { to: '/dashboard',  label: 'Dashboard',     icon: '🏠' },
-  { to: '/children',   label: 'Children',       icon: '👶' },
-  { to: '/plans',      label: 'Training Plans', icon: '📋' },
-  { to: '/goals',      label: 'Goal Library',   icon: '🎯' },
+  { to: '/dashboard',  label: 'Dashboard',       icon: '🏠' },
+  { to: '/children',   label: 'Children',         icon: '👶' },
+  { to: '/plans',      label: 'Training Plans',   icon: '📋' },
+  { to: '/goals',      label: 'Goal Library',     icon: '🎯' },
+  { to: '/import',     label: 'Import VB-MAPP',   icon: '📥', roles: ['rbt', 'bcba'] },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -60,23 +61,25 @@ export default function Sidebar({ open, onClose }) {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`
-              }
-            >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
-            </NavLink>
-          ))}
+          {navItems
+            .filter(item => !item.roles || item.roles.includes(user?.role))
+            .map(item => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-brand-50 text-brand-700'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`
+                }
+              >
+                <span className="text-base">{item.icon}</span>
+                {item.label}
+              </NavLink>
+            ))}
         </nav>
 
         {/* Logout */}
