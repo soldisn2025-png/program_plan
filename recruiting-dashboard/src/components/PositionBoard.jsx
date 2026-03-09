@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useDashboardStore } from '../store/useDashboardStore.js'
 import { STAGE_ORDER, STAGE_COLORS } from '../plugins/csv/jazzhr-mapper.js'
 
@@ -26,8 +27,26 @@ function MiniPipeline({ counts }) {
 }
 
 export default function PositionBoard() {
-  const pipelineByJob = useDashboardStore(s => s.getPipelineByJob())
-  const byJob = useDashboardStore(s => s.getByJob())
+  const candidates = useDashboardStore(s => s.candidates)
+
+  const byJob = useMemo(() => {
+    const groups = {}
+    for (const c of candidates) {
+      const job = c.jobTitle || 'Unknown Position'
+      if (!groups[job]) groups[job] = []
+      groups[job].push(c)
+    }
+    return groups
+  }, [candidates])
+
+  const pipelineByJob = useMemo(() => {
+    const result = {}
+    for (const [job, cands] of Object.entries(byJob)) {
+      result[job] = { Screened: 0, Submitted: 0, Interviewed: 0, Offered: 0, Hired: 0, Inactive: 0 }
+      for (const c of cands) result[job][c.stageGroup] = (result[job][c.stageGroup] || 0) + 1
+    }
+    return result
+  }, [byJob])
 
   const rows = Object.entries(pipelineByJob)
     .map(([job, counts]) => ({

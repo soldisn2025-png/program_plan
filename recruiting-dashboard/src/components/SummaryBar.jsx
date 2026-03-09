@@ -1,10 +1,17 @@
+import { useMemo } from 'react'
 import { useDashboardStore } from '../store/useDashboardStore.js'
 import { STAGE_COLORS, STAGE_ORDER } from '../plugins/csv/jazzhr-mapper.js'
 
 export default function SummaryBar() {
-  const summary = useDashboardStore(s => s.getSummary())
-  const total = useDashboardStore(s => s.candidates.length)
+  const candidates = useDashboardStore(s => s.candidates)
   const lastLoadedAt = useDashboardStore(s => s.lastLoadedAt)
+  const total = candidates.length
+
+  const summary = useMemo(() => {
+    const counts = { Screened: 0, Submitted: 0, Interviewed: 0, Offered: 0, Hired: 0, Inactive: 0 }
+    for (const c of candidates) counts[c.stageGroup] = (counts[c.stageGroup] || 0) + 1
+    return counts
+  }, [candidates])
 
   const activeTotal = STAGE_ORDER.reduce((acc, s) => acc + (summary[s] || 0), 0)
 

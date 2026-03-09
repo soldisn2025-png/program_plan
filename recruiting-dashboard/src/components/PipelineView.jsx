@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useDashboardStore } from '../store/useDashboardStore.js'
 import { STAGE_ORDER, STAGE_COLORS } from '../plugins/csv/jazzhr-mapper.js'
 
@@ -75,9 +75,19 @@ function PipelineColumn({ stage, candidates }) {
 
 export default function PipelineView() {
   const candidates = useDashboardStore(s => s.candidates)
-  const byJob = useDashboardStore(s => s.getByJob())
-  const jobs = Object.keys(byJob).sort()
   const [selectedJob, setSelectedJob] = useState('__all__')
+
+  const byJob = useMemo(() => {
+    const groups = {}
+    for (const c of candidates) {
+      const job = c.jobTitle || 'Unknown Position'
+      if (!groups[job]) groups[job] = []
+      groups[job].push(c)
+    }
+    return groups
+  }, [candidates])
+
+  const jobs = Object.keys(byJob).sort()
 
   const filtered = selectedJob === '__all__'
     ? candidates
