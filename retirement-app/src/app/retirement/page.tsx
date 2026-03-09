@@ -2,327 +2,284 @@
 
 import { useState } from 'react'
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine, Legend,
 } from 'recharts'
-import { calculateRetirementProjection, formatCurrency, USD_TO_KRW } from '@/lib/retirement'
-import ProgressRing from '@/components/ProgressRing'
+import {
+  FI_NUMBER, KOREA_MONTHLY_BUDGET_USD, USD_TO_KRW, SS_ESTIMATE,
+  KOREA_EXPENSE_DETAIL, SCENARIOS, getFinancialSummary,
+} from '@/lib/real-data'
 
-const CURRENT_YEAR = new Date().getFullYear()
 const BIRTH_YEAR = 1985
+const CURRENT_YEAR = 2026
+const RETIREMENT_YEAR = 2035
+const ANNUAL_RETURN = 0.07
 
-// Build projection timeline
-function buildTimeline(
-  startNW: number,
-  monthlyContrib: number,
-  monthlyExpenses: number,
-  retirementYear: number,
-  usdToKrw: number
-) {
-  const timeline = []
-  let nw = startNW
-  const annualReturn = 0.07
-  const fiNumber = monthlyExpenses * 12 * 25
-
-  for (let year = CURRENT_YEAR; year <= retirementYear + 10; year++) {
-    const isRetired = year >= retirementYear
-    if (isRetired) {
-      // 4% withdrawal
-      nw = nw * (1 + annualReturn) - monthlyExpenses * 12
-    } else {
-      nw = nw * (1 + annualReturn) + monthlyContrib * 12
-    }
-    timeline.push({
-      year,
-      age: year - BIRTH_YEAR,
-      netWorth: Math.round(nw),
-      fiNumber: Math.round(fiNumber),
-      isRetired,
-    })
-  }
-  return timeline
+function fmt(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
+  return `$${Math.round(n).toLocaleString()}`
 }
 
-// Korea cost of living data
-const KOREA_EXPENSES = [
-  { category: 'Housing (rent, Seoul suburban)', monthly: 900, notes: '원룸/apartment in Bundang, Ilsan area' },
-  { category: 'Food & Dining', monthly: 500, notes: 'Mix of local restaurants & home cooking' },
-  { category: 'National Health Insurance', monthly: 150, notes: 'NHI for US expat; actual rates vary' },
-  { category: 'Transport', monthly: 100, notes: 'Seoul metro + occasional KTX' },
-  { category: 'Entertainment & Travel', monthly: 300, notes: 'Local trips, flights back to US 1-2x/yr' },
-  { category: 'Utilities & Phone', monthly: 120, notes: 'Electric, internet, mobile' },
-  { category: 'Miscellaneous', monthly: 200, notes: 'Clothing, personal care, etc.' },
-  { category: 'Emergency Buffer', monthly: 230, notes: '~8% buffer for unexpected costs' },
-]
+function buildTimeline(startNW: number, monthlyContrib: number, monthlyBudget: number, retireYear: number) {
+  const points = []
+  let nw = startNW
+  const fiNum = monthlyBudget * 12 * 25
+
+  for (let yr = CURRENT_YEAR; yr <= retireYear + 15; yr++) {
+    const age = yr - BIRTH_YEAR
+    const isRetired = yr >= retireYear
+    if (isRetired) {
+      nw = nw * (1 + ANNUAL_RETURN) - monthlyBudget * 12
+    } else {
+      nw = nw * (1 + ANNUAL_RETURN) + monthlyContrib * 12
+    }
+    points.push({ year: yr, age, netWorth: Math.round(Math.max(0, nw)), fiNumber: Math.round(fiNum) })
+  }
+  return points
+}
 
 export default function RetirementPage() {
-  const [view, setView] = useState<'family' | 'korea'>('korea')
-  const [koreaMonthly, setKoreaMonthly] = useState(2500)
-  const [familyMonthly, setFamilyMonthly] = useState(6000)
-  const [currentNW] = useState(287_500)
-  const [monthlyContrib] = useState(3_200)
+  const [view, setView] = useState<'korea' | 'family'>('korea')
+  const [koreaMonthly, setKoreaMonthly] = useState(KOREA_MONTHLY_BUDGET_USD)
+  const [familyMonthly, setFamilyMonthly] = useState(5000)
 
-  const targetYear = 2035
-  const monthlyBudget = view === 'korea' ? koreaMonthly : familyMonthly
-  const projection = calculateRetirementProjection({
-    currentNetWorth: currentNW,
-    monthlyContributions: monthlyContrib,
-    monthlyExpenses: monthlyBudget,
-    koreaMonthlyBudgetUSD: koreaMonthly,
-    currentYear: CURRENT_YEAR,
-    targetRetirementYear: targetYear,
-    usdToKrw: USD_TO_KRW,
-  })
+  const summary = getFinancialSummary()
+  const budget = view === 'korea' ? koreaMonthly : familyMonthly
+  const fiNum = budget * 12 * 25
+  const investPct = (summary.totalInvestable / fiNum) * 100
+  const timeline = buildTimeline(summary.totalInvestable, 27400 / 12 + 7000 / 12, budget, RETIREMENT_YEAR)
+  const projected2035 = timeline.find(p => p.year === RETIREMENT_YEAR)?.netWorth ?? 0
 
-  const timeline = buildTimeline(currentNW, monthlyContrib, monthlyBudget, targetYear, USD_TO_KRW)
-  const totalKoreaExpenses = KOREA_EXPENSES.reduce((s, e) => s + e.monthly, 0)
+  const koreaTotal = KOREA_EXPENSE_DETAIL.reduce((s, e) => s + e.monthly, 0)
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between">
+    <div style={{
+      minHeight: '100vh', background: '#080C14', color: '#E2E8F0',
+      fontFamily: "'DM Mono', 'Courier New', monospace",
+      padding: '24px', display: 'flex', flexDirection: 'column', gap: 16,
+    }}>
+      {/* Header + toggle */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Retirement Dashboard</h1>
-          <p className="text-slate-500 mt-1">Retire at 50 in 2035 · Moving to Korea 🇰🇷</p>
+          <div style={{ fontSize: 10, letterSpacing: 3, color: '#475569', marginBottom: 4 }}>RETIREMENT PLAN · 은퇴 플랜</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#F8FAFC', letterSpacing: -1 }}>
+            50세 은퇴 · 2035년 귀국 🇰🇷
+          </div>
+          <div style={{ fontSize: 10, color: '#475569', marginTop: 4 }}>
+            Sol (50세) · 수지구 외곽 전원주택 · 태민 자연환경 접근성 우선
+          </div>
         </div>
-        {/* View Toggle */}
-        <div className="flex rounded-lg border border-slate-200 overflow-hidden">
-          <button
-            onClick={() => setView('korea')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              view === 'korea' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            🇰🇷 Korea View
-          </button>
-          <button
-            onClick={() => setView('family')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              view === 'family' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            👨‍👩‍👧 Family View
-          </button>
+        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid #1E293B' }}>
+          {(['korea', 'family'] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                padding: '8px 16px', fontSize: 11, fontWeight: 700,
+                background: view === v ? '#2563EB' : '#0A1020',
+                color: view === v ? '#fff' : '#475569',
+                border: 'none', cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {v === 'korea' ? '🇰🇷 한국 뷰' : '👨‍👩‍👧 가족 뷰'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Budget Slider */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-slate-700">
-            {view === 'korea' ? 'Korea Monthly Budget (USD)' : 'Family Monthly Budget (USD)'}
-          </h2>
-          <span className="text-xl font-bold text-blue-600">{formatCurrency(monthlyBudget)}</span>
+      {/* Budget slider */}
+      <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: 10, color: '#475569', letterSpacing: 2 }}>
+            {view === 'korea' ? '한국 월 생활비 (USD)' : '가족 전체 월 생활비 (USD)'}
+          </span>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#3B82F6' }}>${budget.toLocaleString()}</span>
+            {view === 'korea' && (
+              <span style={{ fontSize: 10, color: '#475569', marginLeft: 8 }}>
+                ≈ ₩{(budget * USD_TO_KRW).toLocaleString('ko-KR')}
+              </span>
+            )}
+          </div>
         </div>
         <input
           type="range"
           min={1000}
           max={view === 'korea' ? 6000 : 12000}
           step={100}
-          value={view === 'korea' ? koreaMonthly : familyMonthly}
-          onChange={(e) =>
-            view === 'korea'
-              ? setKoreaMonthly(Number(e.target.value))
-              : setFamilyMonthly(Number(e.target.value))
-          }
-          className="w-full accent-blue-600"
+          value={budget}
+          onChange={e => view === 'korea' ? setKoreaMonthly(+e.target.value) : setFamilyMonthly(+e.target.value)}
+          style={{ width: '100%', accentColor: '#3B82F6' }}
         />
-        <div className="flex justify-between text-xs text-slate-400 mt-1">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#334155', marginTop: 2 }}>
           <span>$1,000</span>
           <span>{view === 'korea' ? '$6,000' : '$12,000'}</span>
         </div>
-        {view === 'korea' && (
-          <p className="text-sm text-slate-500 mt-2">
-            ≈ ₩{(koreaMonthly * USD_TO_KRW).toLocaleString('ko-KR')} per month
-          </p>
-        )}
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="stat-card">
-          <p className="stat-label">FI Number</p>
-          <p className="stat-value">{formatCurrency(projection.fiNumber)}</p>
-          <p className="stat-delta text-slate-500">25× annual expenses</p>
-        </div>
-        <div className="stat-card">
-          <p className="stat-label">Projected @ 2035</p>
-          <p className="stat-value">{formatCurrency(projection.projectedNetWorthAtRetirement)}</p>
-          <p className={`stat-delta ${projection.onTrack ? 'text-emerald-600' : 'text-red-500'}`}>
-            {projection.onTrack ? '✓ On track' : '⚠ Behind'}
-          </p>
-        </div>
-        <div className="stat-card">
-          <p className="stat-label">Years Remaining</p>
-          <p className="stat-value">{projection.yearsToRetirement}</p>
-          <p className="stat-delta text-slate-500">Until Jan 1, 2035</p>
-        </div>
-        <div className="stat-card">
-          <p className="stat-label">Min Monthly Savings</p>
-          <p className="stat-value">{formatCurrency(projection.monthlyContributionNeeded)}</p>
-          <p className="stat-delta text-slate-500">to reach FI on time</p>
-        </div>
+      {/* Key metrics */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+        {[
+          { label: 'FI 목표액 (25×)', value: fmt(fiNum), color: '#8B5CF6', sub: `${budget.toLocaleString()} × 12 × 25` },
+          { label: '2035 예상 금융자산', value: fmt(projected2035), color: projected2035 >= fiNum ? '#10B981' : '#F59E0B', sub: projected2035 >= fiNum ? '✓ 목표 달성' : '⚠ 부족' },
+          { label: '현재 진행률', value: `${Math.min(100, investPct).toFixed(1)}%`, color: '#3B82F6', sub: `${fmt(summary.totalInvestable)} / ${fmt(fiNum)}` },
+          { label: '남은 기간', value: `${RETIREMENT_YEAR - CURRENT_YEAR}년`, color: '#F59E0B', sub: '2035년 1월 1일' },
+        ].map(s => (
+          <div key={s.label} style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '14px 16px' }}>
+            <div style={{ fontSize: 9, color: '#475569', letterSpacing: 2, marginBottom: 6 }}>{s.label.toUpperCase()}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: '#334155', marginTop: 2 }}>{s.sub}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Progress + Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Progress Ring */}
-        <div className="card flex flex-col items-center gap-4">
-          <h2 className="text-lg font-semibold text-slate-900 self-start">FI Progress</h2>
-          <ProgressRing
-            percent={projection.progressPercent}
-            size={160}
-            color={projection.onTrack ? '#10b981' : '#f59e0b'}
-            label={`${projection.progressPercent.toFixed(1)}%`}
-            sublabel="of FI goal"
-          />
-          <div className="w-full space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Current NW</span>
-              <span className="font-medium">{formatCurrency(currentNW)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">FI Target</span>
-              <span className="font-medium">{formatCurrency(projection.fiNumber)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Gap</span>
-              <span className="font-medium text-orange-500">
-                {formatCurrency(Math.max(0, projection.fiNumber - currentNW))}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Projection Chart */}
-        <div className="card col-span-3">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Net Worth Projection</h2>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={timeline}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis
-                dataKey="year"
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
-                tickFormatter={(v) => `${v} (${v - BIRTH_YEAR})`}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
-                tickFormatter={(v) => `$${(v / 1_000_000).toFixed(1)}M`}
-              />
-              <Tooltip
-                formatter={(val: number, name: string) => [
-                  formatCurrency(val),
-                  name === 'netWorth' ? 'Net Worth' : 'FI Number',
-                ]}
-                labelFormatter={(label) => `${label} (Age ${Number(label) - BIRTH_YEAR})`}
-                contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
-              />
-              <ReferenceLine x={targetYear} stroke="#ef4444" strokeDasharray="4 2" label={{ value: 'Retire', fill: '#ef4444', fontSize: 11 }} />
-              <Line type="monotone" dataKey="netWorth" stroke="#3b82f6" strokeWidth={2.5} dot={false} name="netWorth" />
-              <Line type="monotone" dataKey="fiNumber" stroke="#10b981" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="fiNumber" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      {/* Projection chart */}
+      <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '20px' }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, color: '#475569', marginBottom: 12 }}>순자산 프로젝션 · {CURRENT_YEAR}–{RETIREMENT_YEAR + 15}</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={timeline} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="2 4" stroke="#1E293B" />
+            <XAxis
+              dataKey="year"
+              tick={{ fontSize: 9, fill: '#334155' }}
+              tickFormatter={v => `${v}(${v - BIRTH_YEAR}세)`}
+              interval={2}
+            />
+            <YAxis
+              tickFormatter={v => `$${(v / 1_000_000).toFixed(1)}M`}
+              tick={{ fontSize: 9, fill: '#334155' }}
+              width={52}
+            />
+            <Tooltip
+              formatter={(v: number, name: string) => [fmt(v), name === 'netWorth' ? '순자산' : 'FI 목표']}
+              labelFormatter={l => `${l}년 (${Number(l) - BIRTH_YEAR}세)`}
+              contentStyle={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 8, fontSize: 10 }}
+              labelStyle={{ color: '#94A3B8' }}
+            />
+            <ReferenceLine x={RETIREMENT_YEAR} stroke="#EF4444" strokeDasharray="4 2"
+              label={{ value: '은퇴', fill: '#EF4444', fontSize: 9 }} />
+            <ReferenceLine x={2047} stroke="#F59E0B" strokeDasharray="4 2"
+              label={{ value: 'SS(62세)', fill: '#F59E0B', fontSize: 8 }} />
+            <Legend wrapperStyle={{ fontSize: 9, color: '#475569' }} />
+            <Line type="monotone" dataKey="netWorth" stroke="#3B82F6" strokeWidth={2.5} dot={false} name="순자산" />
+            <Line type="monotone" dataKey="fiNumber" stroke="#8B5CF6" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="FI 목표" />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
-      {/* Korea Cost of Living Breakdown */}
-      {view === 'korea' && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Korea Monthly Budget Breakdown</h2>
-            <span className="text-sm text-slate-500">Estimated for Seoul Metro Area</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-500">
-                  <th className="text-left pb-3 font-medium">Category</th>
-                  <th className="text-right pb-3 font-medium">Monthly (USD)</th>
-                  <th className="text-right pb-3 font-medium">Monthly (KRW)</th>
-                  <th className="text-left pb-3 font-medium pl-4">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {KOREA_EXPENSES.map((exp) => (
-                  <tr key={exp.category} className="hover:bg-slate-50">
-                    <td className="py-2.5 font-medium text-slate-800">{exp.category}</td>
-                    <td className="py-2.5 text-right">{formatCurrency(exp.monthly)}</td>
-                    <td className="py-2.5 text-right text-slate-600">
-                      ₩{(exp.monthly * USD_TO_KRW).toLocaleString('ko-KR')}
-                    </td>
-                    <td className="py-2.5 text-slate-400 text-xs pl-4">{exp.notes}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-slate-200">
-                  <td className="pt-3 font-bold text-slate-900">Total</td>
-                  <td className="pt-3 text-right font-bold text-slate-900">{formatCurrency(totalKoreaExpenses)}</td>
-                  <td className="pt-3 text-right font-bold text-slate-900">
-                    ₩{(totalKoreaExpenses * USD_TO_KRW).toLocaleString('ko-KR')}
-                  </td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <div className="mt-4 p-4 bg-blue-50 rounded-xl text-sm text-blue-800">
-            <p className="font-semibold mb-1">📋 Key Considerations for US → Korea Retirement</p>
-            <ul className="space-y-1 text-blue-700 list-disc list-inside">
-              <li>US-Korea tax treaty: US Social Security may be taxed in US only</li>
-              <li>F-2 or F-5 visa required for long-term residence (marriage/ancestry options)</li>
-              <li>Korean National Health Insurance (NHI) available for residents — lower cost than US</li>
-              <li>Roth IRA withdrawals: tax-free in US; verify Korea treatment with a tax professional</li>
-              <li>FBAR/FATCA reporting required for Korean bank accounts over $10,000</li>
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* Family View */}
-      {view === 'family' && (
-        <div className="card">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Family Retirement Plan</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Income Sources</h3>
-              {[
-                { label: 'Roth IRA Withdrawals', value: '$400/mo (tax-free)', note: 'contributions basis first' },
-                { label: '401k Distributions', value: '$1,200/mo', note: 'taxable, consider Roth ladder' },
-                { label: 'Taxable Brokerage', value: '$600/mo', note: 'long-term cap gains rate' },
-                { label: 'Cash Savings Draw', value: '$400/mo', note: 'bridge to SS at 62+' },
-                { label: 'US Social Security', value: 'TBD', note: 'eligible at 62+ (reduced) or 67 (full)' },
-              ].map((item) => (
-                <div key={item.label} className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{item.label}</p>
-                    <p className="text-xs text-slate-400">{item.note}</p>
+      {/* Korea expense breakdown / Family view */}
+      {view === 'korea' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {/* Expense table */}
+          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 12 }}>한국 월 지출 항목 (수지구 외곽)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {KOREA_EXPENSE_DETAIL.map((e, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 8, borderBottom: '1px solid #1E293B' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: '#CBD5E1' }}>{e.category}</div>
+                    <div style={{ fontSize: 8, color: '#334155', marginTop: 2 }}>{e.notes}</div>
                   </div>
-                  <span className="text-sm font-semibold text-emerald-600">{item.value}</span>
+                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC' }}>${e.monthly}</div>
+                    <div style={{ fontSize: 8, color: '#475569' }}>₩{(e.monthly * USD_TO_KRW).toLocaleString('ko-KR')}</div>
+                  </div>
                 </div>
               ))}
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Risk Factors</h3>
-              {[
-                { label: 'Market Sequence Risk', level: 'High', color: 'text-red-500' },
-                { label: 'Healthcare (pre-Medicare)', level: 'High', color: 'text-red-500' },
-                { label: 'Currency (USD/KRW)', level: 'Medium', color: 'text-orange-500' },
-                { label: 'Inflation in Korea', level: 'Medium', color: 'text-orange-500' },
-                { label: 'Tax Law Changes', level: 'Low', color: 'text-yellow-500' },
-                { label: 'Longevity Risk', level: 'Low', color: 'text-yellow-500' },
-              ].map((risk) => (
-                <div key={risk.label} className="flex justify-between">
-                  <span className="text-sm text-slate-700">{risk.label}</span>
-                  <span className={`text-sm font-semibold ${risk.color}`}>{risk.level}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#3B82F6' }}>합계</span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#3B82F6' }}>${koreaTotal}/월</div>
+                  <div style={{ fontSize: 9, color: '#475569' }}>₩{(koreaTotal * USD_TO_KRW).toLocaleString('ko-KR')}</div>
                 </div>
-              ))}
+              </div>
             </div>
+          </div>
+
+          {/* Korea notes */}
+          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569' }}>한국 귀국 핵심 사항</div>
+
+            {[
+              {
+                title: '비자 / 체류',
+                color: '#3B82F6',
+                items: ['F-4 (재외동포) → F-5 (영주권) 전환', '미국 시민권 취득 후 F-4 즉시 신청 가능', 'F-5 취득 후 NHI, 활동지원서비스 접근'],
+              },
+              {
+                title: '세금 (한미 조세협약)',
+                color: '#10B981',
+                items: ['Roth IRA 인출: 미국·한국 모두 비과세 ✅', '401k 인출: 미국에서 과세, 한국 이중과세 없음', 'FBAR: 한국 계좌 $10K 초과 시 신고 필수'],
+              },
+              {
+                title: '72(t) SEPP 중요',
+                color: '#F59E0B',
+                items: ['50세 시작 시 59.5세까지 9.5년 고정', '3가지 계산법 중 유리한 방법 선택', '중도 변경 시 소급 패널티 주의'],
+              },
+              {
+                title: '국민건강보험',
+                color: '#8B5CF6',
+                items: ['F-5 영주권자 기준 가입 가능', '미국 ACA보다 훨씬 저렴 ($80-300/월)', 'ACA: 50-65세 브리지 필요 ($400-800/월)'],
+              },
+            ].map(s => (
+              <div key={s.title} style={{ background: '#0F172A', borderRadius: 8, padding: '10px 12px', border: `1px solid ${s.color}22` }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: s.color, letterSpacing: 1, marginBottom: 6 }}>{s.title.toUpperCase()}</div>
+                {s.items.map((item, i) => (
+                  <div key={i} style={{ fontSize: 9, color: '#64748B', marginBottom: 3, display: 'flex', gap: 5 }}>
+                    <span style={{ color: s.color, flexShrink: 0 }}>›</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* Family View */
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 12 }}>55세 전원 귀국 (2040) · 수입 구조</div>
+            {[
+              { label: '401k 72(t) SEPP', value: '~$1,200', note: '계속 수령 중', color: '#3B82F6' },
+              { label: 'Roth IRA 인출', value: '~$600', note: '잔여 원금', color: '#10B981' },
+              { label: '집 매각 자금 운용', value: '~$2,500-3,000', note: '$900K × 3.5% ÷ 12', color: '#8B5CF6' },
+              { label: 'Kelly ABA 한국 창업', value: '$500-2,000', note: '한국 ABA 시장 개척', color: '#F59E0B' },
+              { label: 'Social Security (62세~)', value: `$${SS_ESTIMATE.age62}+`, note: '2047년부터 COLA 반영', color: '#6366F1' },
+            ].map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #1E293B' }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#CBD5E1' }}>{r.label}</div>
+                  <div style={{ fontSize: 8, color: '#334155' }}>{r.note}</div>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: r.color }}>{r.value}/월</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 12 }}>리스크 요소 (전원 귀국 시)</div>
+            {[
+              { label: '시장 시퀀스 리스크', level: 'HIGH', note: '은퇴 초기 하락장 → 안전망 필요' },
+              { label: '태민 한국 복지 전환', level: 'HIGH', note: 'SSI 중단 → SNT + Sol 보조로 대체' },
+              { label: '환율 (원/달러)', level: 'MED', note: '달러 자산 일부 유지 권장' },
+              { label: 'Kelly ABA 사업 리스크', level: 'MED', note: '한국 ABA 시장 초기 진입' },
+              { label: '부모님 장기 케어 비용', level: 'MED', note: '본인 자산 우선, Sol 보조분 예비' },
+              { label: '인플레이션 (미/한국)', level: 'LOW', note: 'SS COLA + 주식 포트폴리오로 방어' },
+            ].map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid #1E293B' }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#CBD5E1' }}>{r.label}</div>
+                  <div style={{ fontSize: 8, color: '#334155' }}>{r.note}</div>
+                </div>
+                <span style={{
+                  fontSize: 8, fontWeight: 700,
+                  color: r.level === 'HIGH' ? '#EF4444' : r.level === 'MED' ? '#F59E0B' : '#10B981',
+                  flexShrink: 0, marginLeft: 8,
+                }}>{r.level}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
