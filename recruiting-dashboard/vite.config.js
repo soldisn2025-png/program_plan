@@ -3,6 +3,6 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  base: '/program_plan/',
+  base: '/Recruiting-STAQSS2-/',
   plugins: [tailwindcss(), react()],
 })
