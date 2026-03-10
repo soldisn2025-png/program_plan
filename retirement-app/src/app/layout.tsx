@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#080C14' }}>
         <Sidebar />
-        <main style={{ flex: 1, overflowY: 'auto', background: '#080C14' }}>
+        <main style={{ flex: 1, overflowY: 'auto', background: '#F0F4F8' }}>
           {children}
         </main>
       </body>
