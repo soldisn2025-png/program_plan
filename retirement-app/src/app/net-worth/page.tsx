@@ -41,7 +41,7 @@ export default function NetWorthPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#080C14', color: '#E2E8F0',
+      minHeight: '100vh', background: '#F0F4F8', color: '#1E293B',
       fontFamily: "'DM Mono', 'Courier New', monospace",
       padding: '24px',
       display: 'flex', flexDirection: 'column', gap: 16,
@@ -50,7 +50,7 @@ export default function NetWorthPage() {
       <div>
         <div style={{ fontSize: 10, letterSpacing: 3, color: '#475569', marginBottom: 4 }}>NET WORTH TRACKER</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <span style={{ fontSize: 36, fontWeight: 800, color: '#F8FAFC', letterSpacing: -2 }}>{fmt(summary.totalNetWorth)}</span>
+          <span style={{ fontSize: 36, fontWeight: 800, color: '#0F172A', letterSpacing: -2 }}>{fmt(summary.totalNetWorth)}</span>
           <span style={{ fontSize: 12, color: monthChange >= 0 ? '#10B981' : '#EF4444' }}>
             {monthChange >= 0 ? '↑' : '↓'} {fmt(Math.abs(monthChange))} (지난달)
           </span>
@@ -66,7 +66,7 @@ export default function NetWorthPage() {
           { label: '홈 에쿼티', value: fmt(HOME_EQUITY.equity), sub: '2034년 완납', color: '#8B5CF6' },
         ].map(s => (
           <div key={s.label} style={{
-            background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10,
+            background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10,
             padding: '14px 16px',
           }}>
             <div style={{ fontSize: 9, color: '#475569', letterSpacing: 2, marginBottom: 6 }}>{s.label.toUpperCase()}</div>
@@ -77,7 +77,7 @@ export default function NetWorthPage() {
       </div>
 
       {/* Chart */}
-      <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '20px' }}>
+      <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: 10, letterSpacing: 3, color: '#475569' }}>HISTORY · Jan 2023 – Feb 2026</div>
           <div style={{ display: 'flex', gap: 16 }}>
@@ -101,7 +101,7 @@ export default function NetWorthPage() {
                 <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="2 4" stroke="#1E293B" />
+            <CartesianGrid strokeDasharray="2 4" stroke="#E2E8F0" />
             <XAxis dataKey="month" tick={{ fontSize: 9, fill: '#334155' }} interval={2} />
             <YAxis
               tickFormatter={v => `$${(v / 1000).toFixed(0)}K`}
@@ -110,7 +110,7 @@ export default function NetWorthPage() {
             />
             <Tooltip
               formatter={(v: number) => [fmt(v), '순자산']}
-              contentStyle={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 8, fontSize: 10 }}
+              contentStyle={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 10 }}
               labelStyle={{ color: '#94A3B8' }}
             />
             <ReferenceLine y={900000} stroke="#8B5CF6" strokeDasharray="4 2"
@@ -124,7 +124,7 @@ export default function NetWorthPage() {
       {/* Account breakdown */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {ACCOUNT_GROUPS.map(g => (
-          <div key={g.label} style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+          <div key={g.label} style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px' }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 12 }}>{g.label.toUpperCase()}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {g.accounts.map(a => {
@@ -133,15 +133,15 @@ export default function NetWorthPage() {
                   <div key={a.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                       <div>
-                        <span style={{ fontSize: 10, color: '#CBD5E1' }}>{a.icon} {a.label}</span>
+                        <span style={{ fontSize: 10, color: '#334155' }}>{a.icon} {a.label}</span>
                         <div style={{ fontSize: 8, color: '#334155', marginTop: 1 }}>{a.note}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC' }}>{fmt(a.current)}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{fmt(a.current)}</div>
                         <div style={{ fontSize: 8, color: '#475569' }}>→ {fmt(a.target2035)} by 2035</div>
                       </div>
                     </div>
-                    <div style={{ height: 4, background: '#1E293B', borderRadius: 2 }}>
+                    <div style={{ height: 4, background: '#E2E8F0', borderRadius: 2 }}>
                       <div style={{
                         height: '100%',
                         width: `${p}%`,
@@ -159,7 +159,7 @@ export default function NetWorthPage() {
       </div>
 
       {/* Home equity card */}
-      <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+      <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px' }}>
         <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 10 }}>🏠 부동산 현황 (버지니아)</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
           {[
@@ -168,7 +168,7 @@ export default function NetWorthPage() {
             { label: '현재 에쿼티', value: fmt(HOME_EQUITY.equity), color: '#10B981' },
             { label: '2035년 예상 에쿼티', value: fmt(HOME_EQUITY.projected2035Equity), color: '#8B5CF6' },
           ].map(s => (
-            <div key={s.label} style={{ textAlign: 'center', padding: '10px', background: '#0F172A', borderRadius: 8, border: '1px solid #1E293B' }}>
+            <div key={s.label} style={{ textAlign: 'center', padding: '10px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: 8, color: '#475569', marginBottom: 4 }}>{s.label}</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: s.color }}>{s.value}</div>
             </div>

@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --bg: #080C14;
-  --surface: #0A1020;
-  --border: #1E293B;
+  --bg: #F0F4F8;
+  --surface: #ffffff;
+  --border: #E2E8F0;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -23,9 +23,8 @@ html, body {
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
 
 @layer components {
-  /* Dark surface card */
   .card {
-    @apply bg-[#0A1020] border border-[#1E293B] rounded-xl p-5 flex flex-col gap-3;
+    @apply bg-white border border-[#E2E8F0] rounded-xl p-5 flex flex-col gap-3 shadow-sm;
   }
 
   .panel-label {
@@ -33,11 +32,11 @@ html, body {
   }
 
   .stat-value {
-    @apply text-3xl font-bold tracking-tight text-slate-50;
+    @apply text-3xl font-bold tracking-tight text-slate-900;
   }
 
   .stat-label {
-    @apply text-[11px] text-slate-400;
+    @apply text-[11px] text-slate-500;
   }
 
   .btn-primary {
@@ -45,6 +44,6 @@ html, body {
   }
 
   .btn-ghost {
-    @apply bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-md transition-colors;
+    @apply bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-md transition-colors;
   }
 }

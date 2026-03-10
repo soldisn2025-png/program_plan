@@ -55,7 +55,7 @@ export default function RetirementPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#080C14', color: '#E2E8F0',
+      minHeight: '100vh', background: '#F0F4F8', color: '#1E293B',
       fontFamily: "'DM Mono', 'Courier New', monospace",
       padding: '24px', display: 'flex', flexDirection: 'column', gap: 16,
     }}>
@@ -63,22 +63,22 @@ export default function RetirementPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div style={{ fontSize: 10, letterSpacing: 3, color: '#475569', marginBottom: 4 }}>RETIREMENT PLAN · 은퇴 플랜</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#F8FAFC', letterSpacing: -1 }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', letterSpacing: -1 }}>
             50세 은퇴 · 2035년 귀국 🇰🇷
           </div>
           <div style={{ fontSize: 10, color: '#475569', marginTop: 4 }}>
             Sol (50세) · 수지구 외곽 전원주택 · 태민 자연환경 접근성 우선
           </div>
         </div>
-        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid #1E293B' }}>
+        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
           {(['korea', 'family'] as const).map(v => (
             <button
               key={v}
               onClick={() => setView(v)}
               style={{
                 padding: '8px 16px', fontSize: 11, fontWeight: 700,
-                background: view === v ? '#2563EB' : '#0A1020',
-                color: view === v ? '#fff' : '#475569',
+                background: view === v ? '#2563EB' : '#F1F5F9',
+                color: view === v ? '#fff' : '#64748B',
                 border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
@@ -90,7 +90,7 @@ export default function RetirementPage() {
       </div>
 
       {/* Budget slider */}
-      <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px 20px' }}>
+      <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 10, color: '#475569', letterSpacing: 2 }}>
             {view === 'korea' ? '한국 월 생활비 (USD)' : '가족 전체 월 생활비 (USD)'}
@@ -127,7 +127,7 @@ export default function RetirementPage() {
           { label: '현재 진행률', value: `${Math.min(100, investPct).toFixed(1)}%`, color: '#3B82F6', sub: `${fmt(summary.totalInvestable)} / ${fmt(fiNum)}` },
           { label: '남은 기간', value: `${RETIREMENT_YEAR - CURRENT_YEAR}년`, color: '#F59E0B', sub: '2035년 1월 1일' },
         ].map(s => (
-          <div key={s.label} style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '14px 16px' }}>
+          <div key={s.label} style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 16px' }}>
             <div style={{ fontSize: 9, color: '#475569', letterSpacing: 2, marginBottom: 6 }}>{s.label.toUpperCase()}</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
             <div style={{ fontSize: 9, color: '#334155', marginTop: 2 }}>{s.sub}</div>
@@ -136,11 +136,11 @@ export default function RetirementPage() {
       </div>
 
       {/* Projection chart */}
-      <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '20px' }}>
+      <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
         <div style={{ fontSize: 10, letterSpacing: 3, color: '#475569', marginBottom: 12 }}>순자산 프로젝션 · {CURRENT_YEAR}–{RETIREMENT_YEAR + 15}</div>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={timeline} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="2 4" stroke="#1E293B" />
+            <CartesianGrid strokeDasharray="2 4" stroke="#E2E8F0" />
             <XAxis
               dataKey="year"
               tick={{ fontSize: 9, fill: '#334155' }}
@@ -155,7 +155,7 @@ export default function RetirementPage() {
             <Tooltip
               formatter={(v: number, name: string) => [fmt(v), name === 'netWorth' ? '순자산' : 'FI 목표']}
               labelFormatter={l => `${l}년 (${Number(l) - BIRTH_YEAR}세)`}
-              contentStyle={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 8, fontSize: 10 }}
+              contentStyle={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 10 }}
               labelStyle={{ color: '#94A3B8' }}
             />
             <ReferenceLine x={RETIREMENT_YEAR} stroke="#EF4444" strokeDasharray="4 2"
@@ -173,17 +173,17 @@ export default function RetirementPage() {
       {view === 'korea' ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {/* Expense table */}
-          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px' }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 12 }}>한국 월 지출 항목 (수지구 외곽)</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {KOREA_EXPENSE_DETAIL.map((e, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 8, borderBottom: '1px solid #1E293B' }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 8, borderBottom: '1px solid #E2E8F0' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, color: '#CBD5E1' }}>{e.category}</div>
+                    <div style={{ fontSize: 10, color: '#334155' }}>{e.category}</div>
                     <div style={{ fontSize: 8, color: '#334155', marginTop: 2 }}>{e.notes}</div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC' }}>${e.monthly}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A' }}>${e.monthly}</div>
                     <div style={{ fontSize: 8, color: '#475569' }}>₩{(e.monthly * USD_TO_KRW).toLocaleString('ko-KR')}</div>
                   </div>
                 </div>
@@ -199,7 +199,7 @@ export default function RetirementPage() {
           </div>
 
           {/* Korea notes */}
-          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569' }}>한국 귀국 핵심 사항</div>
 
             {[
@@ -224,7 +224,7 @@ export default function RetirementPage() {
                 items: ['F-5 영주권자 기준 가입 가능', '미국 ACA보다 훨씬 저렴 ($80-300/월)', 'ACA: 50-65세 브리지 필요 ($400-800/월)'],
               },
             ].map(s => (
-              <div key={s.title} style={{ background: '#0F172A', borderRadius: 8, padding: '10px 12px', border: `1px solid ${s.color}22` }}>
+              <div key={s.title} style={{ background: '#F8FAFC', borderRadius: 8, padding: '10px 12px', border: `1px solid ${s.color}44` }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: s.color, letterSpacing: 1, marginBottom: 6 }}>{s.title.toUpperCase()}</div>
                 {s.items.map((item, i) => (
                   <div key={i} style={{ fontSize: 9, color: '#64748B', marginBottom: 3, display: 'flex', gap: 5 }}>
@@ -239,7 +239,7 @@ export default function RetirementPage() {
       ) : (
         /* Family View */
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px' }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 12 }}>55세 전원 귀국 (2040) · 수입 구조</div>
             {[
               { label: '401k 72(t) SEPP', value: '~$1,200', note: '계속 수령 중', color: '#3B82F6' },
@@ -248,9 +248,9 @@ export default function RetirementPage() {
               { label: 'Kelly ABA 한국 창업', value: '$500-2,000', note: '한국 ABA 시장 개척', color: '#F59E0B' },
               { label: 'Social Security (62세~)', value: `$${SS_ESTIMATE.age62}+`, note: '2047년부터 COLA 반영', color: '#6366F1' },
             ].map((r, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #1E293B' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #E2E8F0' }}>
                 <div>
-                  <div style={{ fontSize: 10, color: '#CBD5E1' }}>{r.label}</div>
+                  <div style={{ fontSize: 10, color: '#334155' }}>{r.label}</div>
                   <div style={{ fontSize: 8, color: '#334155' }}>{r.note}</div>
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: r.color }}>{r.value}/월</span>
@@ -258,7 +258,7 @@ export default function RetirementPage() {
             ))}
           </div>
 
-          <div style={{ background: '#0A1020', border: '1px solid #1E293B', borderRadius: 10, padding: '16px' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px' }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: '#475569', marginBottom: 12 }}>리스크 요소 (전원 귀국 시)</div>
             {[
               { label: '시장 시퀀스 리스크', level: 'HIGH', note: '은퇴 초기 하락장 → 안전망 필요' },
@@ -268,9 +268,9 @@ export default function RetirementPage() {
               { label: '부모님 장기 케어 비용', level: 'MED', note: '본인 자산 우선, Sol 보조분 예비' },
               { label: '인플레이션 (미/한국)', level: 'LOW', note: 'SS COLA + 주식 포트폴리오로 방어' },
             ].map((r, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid #1E293B' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid #E2E8F0' }}>
                 <div>
-                  <div style={{ fontSize: 10, color: '#CBD5E1' }}>{r.label}</div>
+                  <div style={{ fontSize: 10, color: '#334155' }}>{r.label}</div>
                   <div style={{ fontSize: 8, color: '#334155' }}>{r.note}</div>
                 </div>
                 <span style={{
