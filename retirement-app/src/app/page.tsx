@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import {
   KOREA_CASHFLOW, ACTION_ITEMS_2026, RISKS, TAIMIN_STATUS, SS_ESTIMATE,
 } from '@/lib/real-data'
@@ -23,13 +22,6 @@ interface Bucket {
   bd: string
   items: BucketItem[]
   note: string
-}
-interface PlaidAccount {
-  name?: string
-  institution_name?: string
-  subtype?: string
-  is_roth?: boolean
-  current_balance?: number
 }
 
 // ─── STATIC DATA ─────────────────────────────────────────────────────
@@ -143,63 +135,6 @@ function pct(c: number, t: number): number {
   return t === 0 ? 0 : Math.min(100, Math.round((c / t) * 100))
 }
 
-// Match Plaid accounts to bucket items by account name / subtype keywords
-function mergePlaidIntoBuckets(buckets: Bucket[], plaidAccounts: PlaidAccount[]): Bucket[] {
-  const keywords: Record<string, string[]> = {
-    cash:         ['checking', 'savings', 'bofa', 'bank of america', 'money market'],
-    etrade:       ['etrade', 'e*trade', 'e-trade'],
-    sofi:         ['sofi'],
-    roth_balance: ['roth ira', 'roth'],
-    tira_sol:     ['traditional ira', 'tira'],
-    k401:         ['401k', '401(k)', 'fidelity 401'],
-    kelly_ira:    ['rollover ira', 'kelly', 'vanguard ira'],
-    hsa:          ['hsa', 'health savings'],
-  }
-
-  const matched: Record<string, number> = {}
-
-  for (const acc of plaidAccounts) {
-    const searchStr = `${acc.name ?? ''} ${acc.institution_name ?? ''}`.toLowerCase()
-    const bal = acc.current_balance ?? 0
-
-    // Roth accounts first (most specific match)
-    if (acc.is_roth || acc.subtype === 'roth') {
-      matched.roth_balance = (matched.roth_balance ?? 0) + bal
-      continue
-    }
-
-    let found = false
-    for (const [itemId, kws] of Object.entries(keywords)) {
-      if (itemId === 'roth_balance') continue
-      if (kws.some(k => searchStr.includes(k))) {
-        matched[itemId] = (matched[itemId] ?? 0) + bal
-        found = true
-        break
-      }
-    }
-
-    // Fallback: match by subtype alone
-    if (!found) {
-      const sub = acc.subtype ?? ''
-      if (sub === '401k') matched.k401 = (matched.k401 ?? 0) + bal
-      else if (sub === 'ira') matched.tira_sol = (matched.tira_sol ?? 0) + bal
-      else if (sub === 'hsa') matched.hsa = (matched.hsa ?? 0) + bal
-      else if (['checking', 'savings', 'money_market'].includes(sub)) matched.cash = (matched.cash ?? 0) + bal
-      else if (sub === 'brokerage') matched.etrade = (matched.etrade ?? 0) + bal
-    }
-  }
-
-  if (Object.keys(matched).length === 0) return buckets
-
-  return buckets.map(b => ({
-    ...b,
-    items: b.items.map(item => {
-      if (item.isBasis) return item  // Roth Basis is always manual
-      if (matched[item.id] !== undefined) return { ...item, current: matched[item.id] }
-      return item
-    }),
-  }))
-}
 
 // ─── STYLE CONSTANTS ────────────────────────────────────────────────
 const PRICOLOR: Record<string, string> = { HIGH: '#DC2626', MED: '#D97706', LOW: '#6B7280' }
@@ -240,8 +175,6 @@ export default function DashboardPage() {
   const [actions, setActions] = useState(ACTION_ITEMS_2026)
   const [editing, setEditing] = useState<string | null>(null)
   const [editVal, setEditVal] = useState('')
-  const [lastSynced, setLastSynced] = useState<string | null>(null)
-  const [isLive, setIsLive]   = useState(false)
 
   useEffect(() => {
     // Restore Roth Basis from localStorage
@@ -255,23 +188,6 @@ export default function DashboardPage() {
         })))
       }
     }
-
-    // Fetch real Plaid data from /api/dashboard
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) return
-      fetch('/api/dashboard', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data.accounts) && data.accounts.length > 0) {
-            setBuckets(prev => mergePlaidIntoBuckets(prev, data.accounts))
-            setIsLive(true)
-          }
-          if (data.lastSyncedAt) setLastSynced(data.lastSyncedAt)
-        })
-        .catch(() => {/* silently fall back to static data */})
-    })
   }, [])
 
   const commitEdit = (bIdx: number, iIdx: number) => {
@@ -345,19 +261,9 @@ export default function DashboardPage() {
           background: 'linear-gradient(135deg,#EFF6FF,#F5F3FF)',
           border: '1.5px solid #BFDBFE',
         }}>
-          <div style={{ fontSize: 13, color: '#64748B', marginBottom: 2 }}>
-            Sol 금융자산 총계
-            {isLive && (
-              <span style={{ fontSize: 10, color: '#059669', marginLeft: 6, background: '#ECFDF5', padding: '1px 6px', borderRadius: 10 }}>
-                ● LIVE
-              </span>
-            )}
-          </div>
+          <div style={{ fontSize: 13, color: '#64748B', marginBottom: 2 }}>Sol 금융자산 총계</div>
           <div style={{ fontSize: 30, fontWeight: 900, color: '#1E40AF' }}>{fmt(total)}</div>
-          <div style={{ fontSize: 12, color: '#94A3B8' }}>
-            목표 {fmt(totalTarget)} · {pct(total, totalTarget)}%
-            {lastSynced && ` · ${new Date(lastSynced).toLocaleDateString('ko-KR')} 동기화`}
-          </div>
+          <div style={{ fontSize: 12, color: '#94A3B8' }}>목표 {fmt(totalTarget)} · {pct(total, totalTarget)}%</div>
         </div>
       )}
 
@@ -376,11 +282,6 @@ export default function DashboardPage() {
         {/* ── 3 Buckets (spans full left column) ── */}
         <div style={{ ...card, gridRow: '1/3' }}>
           <div style={tagStyle}>3-Bucket 자산 구조 · 숫자 클릭 → 수정</div>
-          {isLive && (
-            <div style={{ fontSize: 12, color: '#059669', background: '#ECFDF5', padding: '6px 12px', borderRadius: 8, border: '1px solid #6EE7B7' }}>
-              ● Plaid 실시간 연동 중 · 계좌 잔액 자동 업데이트됨
-            </div>
-          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, overflowY: 'auto' }}>
             {buckets.map((bkt, bi) => {
               const btotal  = bucketTotal(bkt)
