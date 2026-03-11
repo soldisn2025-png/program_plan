@@ -31,6 +31,8 @@ jobs:
           cache: npm
           cache-dependency-path: retirement-app/package-lock.json
 
+      - uses: actions/configure-pages@v4
+
       - run: npm ci
 
       - run: npm run build
@@ -44,6 +46,8 @@ jobs:
           PLAID_ENV: sandbox
           ANTHROPIC_API_KEY: placeholder
           NEXT_PUBLIC_APP_URL: https://soldisn2025-png.github.io/Retirement
+
+      - run: touch out/.nojekyll
 
       - uses: actions/upload-pages-artifact@v3
         with:
