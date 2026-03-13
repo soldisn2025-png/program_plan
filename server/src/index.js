@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const migrate = require('./db/migrate');
 
 const authRoutes    = require('./routes/auth');
 const childrenRoutes = require('./routes/children');
@@ -37,4 +38,6 @@ app.use('/api/import',   importRoutes);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+migrate().then(() => {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+});
