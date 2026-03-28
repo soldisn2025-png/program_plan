@@ -14,19 +14,42 @@ const domainLabels = {
   motor_skills:       'Motor Skills',
 };
 
+// Maps VB-MAPP clinical domain → goals table domain column
+const vbmappDomainMap = {
+  'Mand':                 'verbal_behavior',
+  'Tact':                 'verbal_behavior',
+  'Echoic':               'verbal_behavior',
+  'Intraverbal':          'verbal_behavior',
+  'LRFFC':                'verbal_behavior',
+  'Listener Responding':  'verbal_behavior',
+  'VP/MTS':               'verbal_behavior',
+  'Linguistic Structure': 'verbal_behavior',
+  'Independent Play':     'daily_living',
+  'Classroom Routines':   'daily_living',
+  'Social Behavior':      'social_skills',
+  'Reading':              'academic',
+  'Writing':              'academic',
+  'Math':                 'academic',
+  'Spelling':             'academic',
+  'Motor Imitation':      'imitation',
+};
+
 const STEPS = ['Plan Details', 'Select Goals', 'Review & Create'];
 
 export default function PlanBuilder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const prefilledChildId = searchParams.get('child_id') || '';
+  const prefilledChildId    = searchParams.get('child_id')     || '';
+  const prefilledVbmappId   = searchParams.get('vbmapp_id')    || '';
+  const prefilledVbmappGoal = searchParams.get('vbmapp_goal')  || '';
+  const prefilledGoalId     = searchParams.get('goal_id')      || '';
 
   const [step, setStep]           = useState(0);
   const [children, setChildren]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Goals staged for this plan: [{ name, domain }]
+  // Goals staged for this plan: [{ name, domain, vbmappDomain?, existingGoalId? }]
   const [stagedGoals, setStagedGoals] = useState([]);
 
   const [form, setForm] = useState({
@@ -37,10 +60,34 @@ export default function PlanBuilder() {
 
   useEffect(() => {
     api.get('/children')
-      .then(r => setChildren(r.data))
+      .then(r => {
+        setChildren(r.data);
+
+        // Pre-stage a VB-MAPP milestone coming from Goal Library
+        if (prefilledVbmappId) {
+          api.get(`/goals/vbmapp/${prefilledVbmappId}`)
+            .then(mr => {
+              const m = mr.data;
+              const domain = vbmappDomainMap[m.domain] || 'verbal_behavior';
+              const goalName = prefilledVbmappGoal || m.milestone_name;
+              setStagedGoals([{ name: goalName, domain, vbmappDomain: m.domain }]);
+            })
+            .catch(() => {});
+        }
+
+        // Pre-stage a library goal coming from Goal Library
+        if (prefilledGoalId) {
+          api.get(`/goals/${prefilledGoalId}`)
+            .then(gr => {
+              const g = gr.data;
+              setStagedGoals([{ name: g.name, domain: g.domain, existingGoalId: g.id }]);
+            })
+            .catch(() => {});
+        }
+      })
       .catch(() => toast.error('Failed to load children'))
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Called by VbmappGoalSelector when user adds a goal
   const handleStageGoal = (goalName, domain, vbmappDomain) => {
@@ -55,17 +102,18 @@ export default function PlanBuilder() {
   const handleCreate = async () => {
     setSubmitting(true);
     try {
-      // 1. Create each staged goal as a plan-specific (non-library) goal
-      // vbmapp_domain triggers automatic population of all 12 template fields
-      const createdIds = await Promise.all(
-        stagedGoals.map(g =>
-          api.post('/goals', { name: g.name, domain: g.domain, vbmapp_domain: g.vbmappDomain })
-             .then(r => r.data.id)
-        )
+      // Resolve each staged goal to a goal ID:
+      // - Library goals (existingGoalId set) are used as-is
+      // - VB-MAPP / custom goals are created fresh (vbmapp_domain triggers template population)
+      const goalIds = await Promise.all(
+        stagedGoals.map(g => {
+          if (g.existingGoalId) return Promise.resolve(g.existingGoalId);
+          return api.post('/goals', { name: g.name, domain: g.domain, vbmapp_domain: g.vbmappDomain })
+                    .then(r => r.data.id);
+        })
       );
 
-      // 2. Create the training plan with those goal IDs
-      const res = await api.post('/plans', { ...form, goal_ids: createdIds });
+      const res = await api.post('/plans', { ...form, goal_ids: goalIds });
       toast.success('Training plan created!');
       navigate(`/plans/${res.data.id}`);
     } catch (err) {

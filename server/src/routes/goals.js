@@ -84,6 +84,21 @@ router.get('/vbmapp-milestones/:domain', auth, async (req, res) => {
   }
 });
 
+// GET /api/goals/vbmapp/:id — single VB-MAPP milestone by numeric ID
+router.get('/vbmapp/:id', auth, async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT * FROM vbmapp_milestones WHERE id = $1',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Milestone not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/goals/:id — single goal with full template data
 router.get('/:id', auth, async (req, res) => {
   try {
