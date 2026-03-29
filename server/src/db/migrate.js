@@ -14,6 +14,7 @@ async function migrate() {
       'vbmapp_seeds.sql',
       'vbmapp_program_templates.sql',
       'vbmapp_program_templates_overrides.sql',
+      'vbmapp_milestone_templates.sql',
       'import_audit_log.sql',
     ];
     for (const file of files) {

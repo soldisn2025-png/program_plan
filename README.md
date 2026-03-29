@@ -20,6 +20,11 @@ Then open:
 createdb aba_app
 psql aba_app < server/src/db/schema.sql
 psql aba_app < server/src/db/seeds.sql
+psql aba_app < server/src/db/vbmapp_seeds.sql
+psql aba_app < server/src/db/vbmapp_program_templates.sql
+psql aba_app < server/src/db/vbmapp_program_templates_overrides.sql
+psql aba_app < server/src/db/vbmapp_milestone_templates.sql
+psql aba_app < server/src/db/import_audit_log.sql
 ```
 
 ### 2. Backend
@@ -28,6 +33,13 @@ cd server
 cp .env.example .env          # edit DATABASE_URL, JWT_SECRET
 npm install
 npm run dev                   # http://localhost:5000
+```
+
+The server now performs an idempotent sync of the official VB-MAPP milestone set on startup (Levels 1-3, 170 milestones total). To run that sync manually:
+
+```bash
+cd server
+npm run sync:vbmapp
 ```
 
 ### 3. Frontend

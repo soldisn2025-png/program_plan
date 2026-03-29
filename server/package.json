@@ -4,7 +4,10 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "check": "node --check src/index.js && node --check src/routes/goals.js && node --check src/routes/import.js && node --check src/db/syncVbmappMilestones.js && node --check src/db/syncVbmappLevel3.js",
+    "sync:vbmapp": "node src/db/syncVbmappMilestones.js",
+    "sync:vbmapp-level3": "node src/db/syncVbmappMilestones.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

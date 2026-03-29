@@ -26,6 +26,7 @@ const DOMAIN_MAP = {
   'Mand':                 'verbal_behavior',
   'Tact':                 'verbal_behavior',
   'Echoic':               'verbal_behavior',
+  'Spontaneous Vocal Behavior': 'verbal_behavior',
   'Intraverbal':          'verbal_behavior',
   'LRFFC':                'verbal_behavior',
   'Listener Responding':  'verbal_behavior',
@@ -44,7 +45,7 @@ const DOMAIN_MAP = {
 const VBMAPP_ABBREVS = {
   'Mand': 'M', 'Tact': 'T', 'Listener Responding': 'LR',
   'VP/MTS': 'VP', 'Independent Play': 'IP', 'Social Behavior': 'Soc',
-  'Motor Imitation': 'MI', 'Echoic': 'Ec', 'LRFFC': 'LRFFC',
+  'Motor Imitation': 'MI', 'Echoic': 'Ec', 'Spontaneous Vocal Behavior': 'SVB', 'LRFFC': 'LRFFC',
   'Intraverbal': 'IV', 'Classroom Routines': 'Cls',
   'Linguistic Structure': 'Lin', 'Reading': 'Rdg',
   'Writing': 'Wri', 'Math': 'Ma', 'Spelling': 'Sp',
@@ -227,11 +228,12 @@ export default function VbmappImport() {
         const goalName = `[${vbLabel(m.domain, m.milestone_number)}] ${m.milestone_name}`;
         const dbDomain = DOMAIN_MAP[m.vbmapp_domain] || 'verbal_behavior';
 
-        // Create goal (auto-populates 12 template fields via vbmapp_domain)
+        // Create goal using milestone-aware VB-MAPP template resolution.
         const goalRes = await api.post('/goals', {
           name: goalName,
           domain: dbDomain,
           vbmapp_domain: m.vbmapp_domain,
+          vbmapp_milestone_code: m.milestone_code,
         });
 
         // Link to plan

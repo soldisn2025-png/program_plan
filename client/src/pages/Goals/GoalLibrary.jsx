@@ -33,6 +33,7 @@ const vbmappAbbrevs = {
   'Social Behavior':      'Soc',
   'Motor Imitation':      'MI',
   'Echoic':               'Ec',
+  'Spontaneous Vocal Behavior': 'SVB',
   'LRFFC':                'LRFFC',
   'Intraverbal':          'IV',
   'Classroom Routines':   'Cls',

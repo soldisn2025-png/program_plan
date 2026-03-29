@@ -3,6 +3,49 @@ const db = require('../db');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
+const TEMPLATE_FIELDS = [
+  'data_collection',
+  'prerequisite_skills',
+  'materials',
+  'sd',
+  'correct_responses',
+  'incorrect_responses',
+  'prompting_hierarchy',
+  'prompting_hierarchy_detail',
+  'error_correction',
+  'transfer_procedure',
+  'reinforcement_schedule',
+  'generalization_plan',
+  'maintenance_plan',
+];
+
+function pickTemplateFields(row = {}) {
+  return TEMPLATE_FIELDS.reduce((fields, key) => {
+    if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+      fields[key] = row[key];
+    }
+    return fields;
+  }, {});
+}
+
+function mergeTemplateFields(...layers) {
+  const merged = {};
+
+  layers.forEach(layer => {
+    if (!layer) return;
+    TEMPLATE_FIELDS.forEach(key => {
+      if (layer[key] !== undefined && layer[key] !== null && layer[key] !== '') {
+        merged[key] = layer[key];
+      }
+    });
+  });
+
+  if (!merged.prompting_hierarchy) {
+    merged.prompting_hierarchy = 'most_to_least';
+  }
+
+  return merged;
+}
 
 // GET /api/goals — list all library goals, optionally filter by domain
 router.get('/', auth, async (req, res) => {
@@ -104,6 +147,7 @@ router.post('/', auth, async (req, res) => {
 
   const {
     name, domain, description, vbmapp_domain,
+    vbmapp_milestone_code,
     data_collection, prerequisite_skills, materials,
     sd, correct_responses, incorrect_responses,
     prompting_hierarchy, prompting_hierarchy_detail,
@@ -112,8 +156,7 @@ router.post('/', auth, async (req, res) => {
   } = req.body;
 
   try {
-    // If a VB-MAPP domain is provided, look up its program plan template
-    let templateFields = {
+    const manualTemplateFields = {
       data_collection, prerequisite_skills, materials,
       sd, correct_responses, incorrect_responses,
       prompting_hierarchy: prompting_hierarchy || 'most_to_least',
@@ -121,29 +164,29 @@ router.post('/', auth, async (req, res) => {
       reinforcement_schedule, generalization_plan, maintenance_plan,
     };
 
-    if (vbmapp_domain) {
-      const tmpl = await db.query(
-        'SELECT * FROM vbmapp_program_templates WHERE vbmapp_domain = $1',
-        [vbmapp_domain]
+    let templateFields = manualTemplateFields;
+
+    if (vbmapp_domain || vbmapp_milestone_code) {
+      const [domainTemplateResult, milestoneTemplateResult] = await Promise.all([
+        vbmapp_domain
+          ? db.query(
+              'SELECT * FROM vbmapp_program_templates WHERE vbmapp_domain = $1',
+              [vbmapp_domain]
+            )
+          : Promise.resolve({ rows: [] }),
+        vbmapp_milestone_code
+          ? db.query(
+              'SELECT * FROM vbmapp_milestone_templates WHERE milestone_code = $1',
+              [vbmapp_milestone_code]
+            )
+          : Promise.resolve({ rows: [] }),
+      ]);
+
+      templateFields = mergeTemplateFields(
+        manualTemplateFields,
+        pickTemplateFields(domainTemplateResult.rows[0]),
+        pickTemplateFields(milestoneTemplateResult.rows[0]),
       );
-      if (tmpl.rows.length > 0) {
-        const t = tmpl.rows[0];
-        templateFields = {
-          data_collection:          t.data_collection,
-          prerequisite_skills:      t.prerequisite_skills,
-          materials:                t.materials,
-          sd:                       t.sd,
-          correct_responses:        t.correct_responses,
-          incorrect_responses:      t.incorrect_responses,
-          prompting_hierarchy:      t.prompting_hierarchy || 'most_to_least',
-          prompting_hierarchy_detail: t.prompting_hierarchy_detail,
-          error_correction:         t.error_correction,
-          transfer_procedure:       t.transfer_procedure,
-          reinforcement_schedule:   t.reinforcement_schedule,
-          generalization_plan:      t.generalization_plan,
-          maintenance_plan:         t.maintenance_plan,
-        };
-      }
     }
 
     const result = await db.query(

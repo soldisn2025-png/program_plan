@@ -39,12 +39,17 @@ export default function PlanDetail() {
   }, [id]);
 
   // Called by VbmappGoalSelector — creates the goal then adds it to the plan
-  const handleAddVbmappGoal = async (goalName, domain, vbmappDomain) => {
+  const handleAddVbmappGoal = async (goalName, domain, vbmappDomain, vbmappMilestoneCode) => {
     setSaving(true);
     try {
       // 1. Create as plan-specific goal (is_library_goal = FALSE via API default)
-      // vbmapp_domain triggers automatic population of all 12 template fields
-      const goalRes = await api.post('/goals', { name: goalName, domain, vbmapp_domain: vbmappDomain });
+      // VB-MAPP metadata triggers milestone-first template resolution.
+      const goalRes = await api.post('/goals', {
+        name: goalName,
+        domain,
+        vbmapp_domain: vbmappDomain,
+        vbmapp_milestone_code: vbmappMilestoneCode,
+      });
       // 2. Attach to this plan
       await api.post(`/plans/${id}/goals`, { goal_id: goalRes.data.id });
       await fetchPlan();

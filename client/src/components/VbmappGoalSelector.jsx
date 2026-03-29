@@ -11,6 +11,7 @@ const vbmappAbbrevs = {
   'Social Behavior':      'Soc',
   'Motor Imitation':      'MI',
   'Echoic':               'Ec',
+  'Spontaneous Vocal Behavior': 'SVB',
   'LRFFC':                'LRFFC',
   'Intraverbal':          'IV',
   'Classroom Routines':   'Cls',
@@ -26,6 +27,7 @@ const vbmappDomainMap = {
   'Mand':                 'verbal_behavior',
   'Tact':                 'verbal_behavior',
   'Echoic':               'verbal_behavior',
+  'Spontaneous Vocal Behavior': 'verbal_behavior',
   'Intraverbal':          'verbal_behavior',
   'LRFFC':                'verbal_behavior',
   'Listener Responding':  'verbal_behavior',
@@ -47,7 +49,8 @@ const vbmappLabel = (domain, num) =>
 /**
  * VbmappGoalSelector
  * Props:
- *   onAdd(goalName: string, domain: string) — called when user adds a goal
+ *   onAdd(goalName: string, domain: string, vbmappDomain?: string, vbmappMilestoneCode?: string)
+ *     called when user adds a goal
  */
 export default function VbmappGoalSelector({ onAdd }) {
   const [suggestions, setSuggestions]           = useState([]);
@@ -85,15 +88,15 @@ export default function VbmappGoalSelector({ onAdd }) {
     }
   }, [selectedMilestone]);
 
-  const commitAdd = (text, vbmappDomain) => {
+  const commitAdd = (text, vbmappDomain, vbmappMilestoneCode) => {
     if (!text.trim()) return;
     const domain = vbmappDomainMap[vbmappDomain] || 'verbal_behavior';
-    // Pass vbmappDomain as 3rd arg so parents can send it to the API for template lookup
-    onAdd(text.trim(), domain, vbmappDomain);
+    // Pass milestone metadata so the API can resolve milestone-specific templates.
+    onAdd(text.trim(), domain, vbmappDomain, vbmappMilestoneCode);
   };
 
   const handleBrowseAdd = () => {
-    commitAdd(goalText, selectedMilestone?.domain);
+    commitAdd(goalText, selectedMilestone?.domain, selectedMilestone?.milestone_code);
     // Reset browser state
     setSelectedDomain('');
     setSelectedMilestone(null);
@@ -102,7 +105,7 @@ export default function VbmappGoalSelector({ onAdd }) {
 
   const handleSuggestionAdd = (m) => {
     const text = `[${vbmappLabel(m.domain, m.milestone_number)}] ${m.milestone_name}`;
-    commitAdd(text, m.domain);
+    commitAdd(text, m.domain, m.milestone_code);
   };
 
   return (
