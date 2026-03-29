@@ -158,6 +158,21 @@ VALUES
  'Embed echoic opportunities throughout daily activities and transitions. Continue EESA progress monitoring monthly. Use echoic training to bridge to new mand and tact targets as vocabulary grows.'),
 
 -- ── LRFFC ────────────────────────────────────────────────────────────────────
+('Spontaneous Vocal Behavior',
+ 'Use timed observations and frequency counts to record spontaneous sounds, babbling patterns, and vocal play during naturally motivating routines. Track independent vocalizations separately from prompted or imitated sounds.',
+ 'Learner orients to people or sensory-social routines, tolerates brief interactive teaching, and has at least some emerging vocal behavior or readiness for vocal play.',
+ 'Preferred sensory-social routines, songs, mirrors, movement activities, highly reinforcing people, playful sound effects, and motivating toys or activities that reliably occasion vocal behavior.',
+ 'Arrange rich vocal and sensory-social opportunities and pause for spontaneous sounds. Use playful vocal models only as needed to invite vocal behavior without turning the target into an echoic-only task.',
+ 'Child emits spontaneous sounds, babbling, or vocal play that matches the current target without needing repeated direct prompts. Responses should increase in variety, frequency, and independence over time.',
+ 'No vocal output, very low rates of spontaneous sound, vocal behavior that occurs only after repeated direct prompts, or unrelated behavior that replaces the vocal opportunity.',
+ 'least_to_most',
+ 'Keep prompts natural and light, such as pausing in a fun routine, imitating learner sounds, modeling playful vocalizations, or using movement and sensory cues that invite vocal behavior. Fade adult support so spontaneous vocal behavior increases.',
+ 'If the learner is not vocalizing, briefly re-establish the motivating routine, model a playful sound if needed, and return quickly to observing for spontaneous or less-prompted vocal behavior.',
+ 'Move from adult-supported vocal play to more spontaneous vocal behavior by fading direct models and embedding opportunities across naturally motivating routines and activities.',
+ 'Use dense social, sensory, and activity-based reinforcement for spontaneous vocal behavior. Prompted vocalizations should receive lighter reinforcement than spontaneous output.',
+ 'Teach across people, songs, movement routines, rooms, toys, and daily activities so spontaneous vocal behavior is not tied to one partner or one context.',
+ 'Embed vocal-play opportunities throughout the day and continue monitoring growth toward stronger echoic, mand, and tact development as spontaneous vocal behavior expands.'),
+
 ('LRFFC',
  'Discrete trial format — record C/I/P per trial. Minimum 20 trials per session. Calculate % correct from array of 4+ items. Mastery: 90%+ independent over 3 consecutive sessions. Track by type: function, feature, and class separately.',
  'Listener Responding Level 2+ (selects from array of 4); Tact repertoire of 50+ items; basic categorization skills; some familiarity with functional use of common objects.',

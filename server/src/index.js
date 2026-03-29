@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const migrate = require('./db/migrate');
 const syncVbmappMilestones = require('./db/syncVbmappMilestones');
+const syncVbmappMilestoneTemplates = require('./db/syncVbmappMilestoneTemplates');
 
 const authRoutes    = require('./routes/auth');
 const childrenRoutes = require('./routes/children');
@@ -42,6 +43,10 @@ const PORT = process.env.PORT || 5000;
 migrate().then(() => {
   return syncVbmappMilestones().catch((err) => {
     console.error('VB-MAPP milestone sync error:', err.message);
+  });
+}).then(() => {
+  return syncVbmappMilestoneTemplates().catch((err) => {
+    console.error('VB-MAPP milestone template sync error:', err.message);
   });
 }).then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

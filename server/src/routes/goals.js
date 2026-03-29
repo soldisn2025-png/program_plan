@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { auth } = require('../middleware/auth');
+const { buildGeneratedMilestoneTemplate } = require('../lib/vbmappMilestoneTemplateFactory');
 
 const router = express.Router();
 const TEMPLATE_FIELDS = [
@@ -159,7 +160,7 @@ router.post('/', auth, async (req, res) => {
     const manualTemplateFields = {
       data_collection, prerequisite_skills, materials,
       sd, correct_responses, incorrect_responses,
-      prompting_hierarchy: prompting_hierarchy || 'most_to_least',
+      prompting_hierarchy,
       prompting_hierarchy_detail, error_correction, transfer_procedure,
       reinforcement_schedule, generalization_plan, maintenance_plan,
     };
@@ -167,7 +168,7 @@ router.post('/', auth, async (req, res) => {
     let templateFields = manualTemplateFields;
 
     if (vbmapp_domain || vbmapp_milestone_code) {
-      const [domainTemplateResult, milestoneTemplateResult] = await Promise.all([
+      const [domainTemplateResult, milestoneTemplateResult, milestoneResult] = await Promise.all([
         vbmapp_domain
           ? db.query(
               'SELECT * FROM vbmapp_program_templates WHERE vbmapp_domain = $1',
@@ -180,12 +181,21 @@ router.post('/', auth, async (req, res) => {
               [vbmapp_milestone_code]
             )
           : Promise.resolve({ rows: [] }),
+        vbmapp_milestone_code
+          ? db.query(
+              'SELECT * FROM vbmapp_milestones WHERE milestone_code = $1',
+              [vbmapp_milestone_code]
+            )
+          : Promise.resolve({ rows: [] }),
       ]);
 
+      const generatedMilestoneTemplate = buildGeneratedMilestoneTemplate(milestoneResult.rows[0]);
+
       templateFields = mergeTemplateFields(
-        manualTemplateFields,
         pickTemplateFields(domainTemplateResult.rows[0]),
+        pickTemplateFields(generatedMilestoneTemplate),
         pickTemplateFields(milestoneTemplateResult.rows[0]),
+        manualTemplateFields,
       );
     }
 

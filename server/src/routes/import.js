@@ -68,7 +68,8 @@ const EXCEL_TO_DOMAIN = {
   'Writing':              'Writing',
   'Spelling':             'Spelling',
   'Echoic':               'Echoic',
-  'Vocal':                'Echoic',
+  'Vocal':                'Spontaneous Vocal Behavior',
+  'Spontaneous Vocal Behavior': 'Spontaneous Vocal Behavior',
 };
 
 // ── Canonical VB-MAPP domain → goals table domain column ─────────────────────
@@ -79,6 +80,7 @@ const DOMAIN_TO_GOALS_DOMAIN = {
   'Intraverbal':          'verbal_behavior',
   'LRFFC':                'verbal_behavior',
   'Listener Responding':  'verbal_behavior',
+  'Spontaneous Vocal Behavior': 'verbal_behavior',
   'VP/MTS':               'verbal_behavior',
   'Linguistic Structure': 'verbal_behavior',
   'Independent Play':     'daily_living',
