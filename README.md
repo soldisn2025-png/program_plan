@@ -1,15 +1,13 @@
 # ABA Training Plan Generator — MVP
 
-## Quick Start (Docker)
+## Live App
 
-```bash
-# From the project root
-docker-compose up --build
-```
+- **App:** https://program-plan-app.onrender.com
+- **API:** https://program-plan-api.onrender.com/api/health
 
-Then open:
-- **App:** http://localhost:5173
-- **API:** http://localhost:5000/api/health
+> First load after inactivity may take ~30 seconds (free tier spins down when idle).
+
+
 
 ---
 
