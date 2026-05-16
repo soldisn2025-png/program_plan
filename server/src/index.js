@@ -10,7 +10,8 @@ const childrenRoutes = require('./routes/children');
 const goalsRoutes   = require('./routes/goals');
 const plansRoutes   = require('./routes/plans');
 const sessionsRoutes = require('./routes/sessions');
-const importRoutes  = require('./routes/import');
+const importRoutes    = require('./routes/import');
+const generateRoutes  = require('./routes/generate');
 
 const app = express();
 
@@ -35,7 +36,8 @@ app.use('/api/children', childrenRoutes);
 app.use('/api/goals',    goalsRoutes);
 app.use('/api/plans',    plansRoutes);
 app.use('/api/sessions', sessionsRoutes);
-app.use('/api/import',   importRoutes);
+app.use('/api/import',    importRoutes);
+app.use('/api/generate',  generateRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

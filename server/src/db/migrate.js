@@ -16,6 +16,7 @@ async function migrate() {
       'vbmapp_program_templates_overrides.sql',
       'vbmapp_milestone_templates.sql',
       'import_audit_log.sql',
+      'generated_plans.sql',
     ];
     for (const file of files) {
       const sql = fs.readFileSync(path.join(__dirname, file), 'utf8');

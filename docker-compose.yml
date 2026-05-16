@@ -14,6 +14,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./server/src/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./server/src/db/seeds.sql:/docker-entrypoint-initdb.d/02_seeds.sql
+      - ./server/src/db/vbmapp_seeds.sql:/docker-entrypoint-initdb.d/03_vbmapp_seeds.sql
+      - ./server/src/db/vbmapp_program_templates.sql:/docker-entrypoint-initdb.d/04_vbmapp_program_templates.sql
+      - ./server/src/db/vbmapp_program_templates_overrides.sql:/docker-entrypoint-initdb.d/05_vbmapp_program_templates_overrides.sql
+      - ./server/src/db/vbmapp_milestone_templates.sql:/docker-entrypoint-initdb.d/06_vbmapp_milestone_templates.sql
+      - ./server/src/db/import_audit_log.sql:/docker-entrypoint-initdb.d/07_import_audit_log.sql
+      - ./server/src/db/generated_plans.sql:/docker-entrypoint-initdb.d/08_generated_plans.sql
 
   server:
     build: ./server
@@ -28,6 +34,8 @@ services:
       # Vite proxies all /api calls, so CORS origin is the Vite server itself (port 5173)
       CLIENT_URL: http://localhost:5173
       CLIENT_URL_LAN: http://192.168.1.198:5173
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     depends_on:
       - db
 

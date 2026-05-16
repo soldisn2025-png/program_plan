@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files — never commit secrets
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Build output
+dist/
+build/
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lock files (keep package-lock.json for reproducibility, but ignore if preferred)
+# package-lock.json
+
+# Test coverage
+coverage/
