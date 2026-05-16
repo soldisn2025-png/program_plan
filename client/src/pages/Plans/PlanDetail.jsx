@@ -107,9 +107,14 @@ export default function PlanDetail() {
           <h2 className="text-xl font-bold text-gray-900">{plan.name}</h2>
           {plan.description && <p className="text-gray-500 text-sm mt-1">{plan.description}</p>}
         </div>
-        <Link to={`/data-collection/${id}`} className="btn-primary flex-shrink-0">
-          📊 Log Session Data
-        </Link>
+        <div className="flex gap-2 flex-shrink-0">
+          <Link to={`/plans/${id}/generate-ai`} className="btn-secondary">
+            Generate AI Plan
+          </Link>
+          <Link to={`/data-collection/${id}`} className="btn-primary">
+            Log Session Data
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

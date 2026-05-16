@@ -17,6 +17,7 @@ import PlansList from './pages/Plans/index';
 import PlanBuilder from './pages/Plans/PlanBuilder';
 import PlanDetail from './pages/Plans/PlanDetail';
 import ProgramPlan from './pages/Plans/ProgramPlan';
+import PlanGenerator from './pages/Plans/PlanGenerator';
 
 import DataCollection from './pages/DataCollection/index';
 import VbmappImport from './pages/Import/VbmappImport';
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="plans/new" element={<PlanBuilder />} />
             <Route path="plans/:id" element={<PlanDetail />} />
             <Route path="plans/:planId/goals/:planGoalId/program" element={<ProgramPlan />} />
+            <Route path="plans/:id/generate-ai" element={<PlanGenerator />} />
 
             <Route path="data-collection/:planId" element={<DataCollection />} />
 
