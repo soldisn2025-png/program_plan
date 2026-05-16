@@ -28,30 +28,43 @@ router.post('/plan/:planId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Plan not found' });
     }
     const row = planResult.rows[0];
+
+    // Convert DB level string ('level_1') to readable number ('1')
+    const levelMap = { level_1: '1', level_2: '2', level_3: '3' };
     const childProfile = {
       firstName: row.first_name,
       lastName: row.last_name,
-      diagnosisLevel: row.diagnosis_level,
+      diagnosisLevel: levelMap[row.diagnosis_level] || row.diagnosis_level || 'not specified',
       strengths: row.strengths,
       areasOfConcern: row.areas_of_concern,
     };
 
-    // Fetch selected milestones for this plan
-    const milestonesResult = await db.query(
-      `SELECT m.name, m.domain, m.level, m.description
+    // Fetch selected goals for this plan from the goals table (plan_goals.goal_id → goals.id)
+    const goalsResult = await db.query(
+      `SELECT g.name, g.domain, g.description,
+              g.prerequisite_skills, g.data_collection,
+              g.sd, g.prompting_hierarchy
        FROM plan_goals pg
-       JOIN milestones m ON m.id = pg.goal_id
+       JOIN goals g ON g.id = pg.goal_id
        WHERE pg.plan_id = $1`,
       [planId]
     );
-    const selectedMilestones = milestonesResult.rows;
+    const selectedMilestones = goalsResult.rows.map(g => ({
+      name: g.name,
+      domain: g.domain,
+      description: g.description,
+      currentPrerequisites: g.prerequisite_skills,
+      currentDataCollection: g.data_collection,
+      currentSd: g.sd,
+      promptingDirection: g.prompting_hierarchy,
+    }));
 
-    // Fetch mastered milestones for this child (from plan_goals with status = mastered)
+    // Fetch goals this child has mastered across all plans
     const masteredResult = await db.query(
-      `SELECT DISTINCT m.name
+      `SELECT DISTINCT g.name
        FROM plan_goals pg
        JOIN training_plans tp ON tp.id = pg.plan_id
-       JOIN milestones m ON m.id = pg.goal_id
+       JOIN goals g ON g.id = pg.goal_id
        WHERE tp.child_id = $1 AND pg.status = 'mastered'`,
       [row.child_id]
     );

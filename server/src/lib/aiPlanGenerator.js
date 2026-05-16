@@ -31,21 +31,28 @@ async function generatePlan({ childProfile, selectedMilestones, masteredMileston
   const { firstName, lastName, diagnosisLevel, strengths, areasOfConcern } = childProfile;
   const masteredList = masteredMilestones.join(', ') || 'None documented';
 
-  const milestonesText = selectedMilestones
-    .map(m => `- ${m.name} (Domain: ${m.domain}, Level: ${m.level}): ${m.description}`)
-    .join('\n');
+  const milestonesText = selectedMilestones.map(m => `
+GOAL: ${m.name}
+Domain: ${m.domain}
+Description: ${m.description || 'Not specified'}
+Current prerequisite skills (from template — expand and improve): ${m.currentPrerequisites || 'Not specified'}
+Current SD (from template — use as a starting point): ${m.currentSd || 'Not specified'}
+Current prompting direction: ${m.promptingDirection === 'least_to_most' ? 'Least to Most' : 'Most to Least'}
+`).join('\n---\n');
 
-  const userPrompt = `Generate complete program plans for the following client and goals.
+  const userPrompt = `Generate complete, detailed program plans for the following client and goals. For each goal, produce a full plan in the exact format and clinical depth shown in the examples above.
 
 CLIENT:
 Name: ${firstName} ${lastName}
 VB-MAPP Level: ${diagnosisLevel}
 Strengths: ${strengths || 'Not specified'}
 Areas of Concern: ${areasOfConcern || 'Not specified'}
-Mastered Milestones: ${masteredList}
+Mastered Goals (use ONLY these as prerequisites if they are clinically appropriate): ${masteredList}
 
 GOALS TO GENERATE PLANS FOR:
-${milestonesText}`;
+${milestonesText}
+
+For each goal above, write a complete, standalone program plan. Include every section: Program Name, Goal, Data Collection, Prerequisite Skills, Materials / Set-Up Required, SD, Correct Response, Incorrect Responses, Prompting Hierarchy, Error Correction, Transfer Procedure, Reinforcement Schedule, Generalization and Maintenance Plan. Separate each goal's plan with a line containing only "---".`;
 
   try {
     const client = getClient();

@@ -57,14 +57,14 @@ describe('POST /api/generate/plan/:planId', () => {
       rows: [{
         id: 1, name: 'Test Plan', child_id: 10,
         first_name: 'Alex', last_name: 'Smith',
-        diagnosis_level: 1, strengths: 'Good eye contact', areas_of_concern: 'Limited speech',
+        diagnosis_level: 'level_1', strengths: 'Good eye contact', areas_of_concern: 'Limited speech',
       }],
     });
-    // selected milestones
+    // selected goals
     db.query.mockResolvedValueOnce({
-      rows: [{ name: 'Mand 1-M', domain: 'Mand', level: 1, description: 'Request using 1-word mands' }],
+      rows: [{ name: 'Mand 1-M', domain: 'verbal_behavior', description: 'Request using 1-word mands', prerequisite_skills: null, data_collection: null, sd: null, prompting_hierarchy: 'least_to_most' }],
     });
-    // mastered milestones
+    // mastered goals
     db.query.mockResolvedValueOnce({
       rows: [{ name: 'Echoics 1-E' }],
     });
@@ -93,11 +93,11 @@ describe('POST /api/generate/plan/:planId', () => {
       rows: [{
         id: 1, name: 'Test Plan', child_id: 10,
         first_name: 'Alex', last_name: 'Smith',
-        diagnosis_level: 1, strengths: 'Good eye contact', areas_of_concern: 'Limited speech',
+        diagnosis_level: 'level_1', strengths: 'Good eye contact', areas_of_concern: 'Limited speech',
       }],
     });
     db.query.mockResolvedValueOnce({
-      rows: [{ name: 'Mand 1-M', domain: 'Mand', level: 1, description: 'Request 1-word mands' }],
+      rows: [{ name: 'Mand 1-M', domain: 'verbal_behavior', description: 'Request 1-word mands', prerequisite_skills: null, data_collection: null, sd: null, prompting_hierarchy: 'least_to_most' }],
     });
     db.query.mockResolvedValueOnce({ rows: [{ name: 'Echoics 1-E' }] });
     db.query.mockResolvedValueOnce({
@@ -114,7 +114,7 @@ describe('POST /api/generate/plan/:planId', () => {
 
     expect(generatePlan).toHaveBeenCalledWith(
       expect.objectContaining({
-        childProfile: expect.objectContaining({ firstName: 'Alex' }),
+        childProfile: expect.objectContaining({ firstName: 'Alex', diagnosisLevel: '1' }),
         selectedMilestones: expect.arrayContaining([expect.objectContaining({ name: 'Mand 1-M' })]),
         masteredMilestones: expect.arrayContaining(['Echoics 1-E']),
       })
