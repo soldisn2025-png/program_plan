@@ -77,7 +77,7 @@ export default function PlanBuilder() {
       // 2. Create the training plan with those goal IDs
       const res = await api.post('/plans', { ...form, goal_ids: createdIds });
       toast.success('Training plan created!');
-      navigate(`/plans/${res.data.id}`);
+      navigate(`/plans/${res.data.id}/generate-ai`);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to create plan');
     } finally {

@@ -16,28 +16,7 @@ export default function PlanGenerator() {
   const [approving, setApproving] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // Load existing draft on mount
-  useEffect(() => {
-    api.get(`/plans/${id}`)
-      .then(res => setPlan(res.data))
-      .catch(() => toast.error('Failed to load plan'));
-
-    api.get(`/generate/plan/${id}`)
-      .then(res => {
-        setContent(res.data.content);
-        setFlags(res.data.flags || []);
-        setStatus(res.data.status === 'approved' ? 'approved' : 'review');
-      })
-      .catch(() => {
-        // No draft yet — stay in idle state
-      });
-  }, [id]);
-
   const handleGenerate = async () => {
-    if (plan?.goals?.length === 0) {
-      toast.error('Add at least one goal to the plan before generating.');
-      return;
-    }
     setStatus('generating');
     setError(null);
     try {
@@ -50,6 +29,23 @@ export default function PlanGenerator() {
       setStatus('error');
     }
   };
+
+  // Load existing draft on mount; auto-generate if none exists yet
+  useEffect(() => {
+    api.get(`/plans/${id}`)
+      .then(res => setPlan(res.data))
+      .catch(() => toast.error('Failed to load plan'));
+
+    api.get(`/generate/plan/${id}`)
+      .then(res => {
+        setContent(res.data.content);
+        setFlags(res.data.flags || []);
+        setStatus(res.data.status === 'approved' ? 'approved' : 'review');
+      })
+      .catch(() => {
+        handleGenerate();
+      });
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleContentChange = useCallback(async (newContent) => {
     setContent(newContent);
