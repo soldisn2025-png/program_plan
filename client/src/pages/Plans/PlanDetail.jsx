@@ -215,9 +215,9 @@ export default function PlanDetail() {
                       </Link>
                       <button
                         onClick={() => handleRemoveGoal(goal.plan_goal_id)}
-                        className="text-xs text-red-400 hover:text-red-600 px-1"
+                        className="text-xs text-red-600 border border-red-300 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-full font-medium transition-colors"
                       >
-                        ✕
+                        Remove
                       </button>
                     </div>
                   </div>
